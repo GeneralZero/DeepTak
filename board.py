@@ -3,8 +3,8 @@ import numpy as np
 #Flat Black = 1 001
 #Wall White = 2 010
 #Wall Black = 3 011
-#Caps White = 4 101
-#Caps Black = 5 100
+#Caps White = 4 100
+#Caps Black = 5 101
 
 #Top is higher
 #ex. (50101)8
@@ -45,8 +45,11 @@ class TakBoard():
 		#Color white=0, black=1
 		controlled_stacks = [x for x in self.board if self.peak_from_index(x) % 2 == color]
 
-		for stack in controlled_stacks:
-			#check all directons
+		for index in controlled_stacks:
+			if self.peak_from_index(index) & 0x04 != 0:
+				#Cap Stone
+			
+			#check all directons for walls/capstones and end of line
 			pass
 
 	def index_to_grid(self, index):
