@@ -41,13 +41,78 @@ class TakBoard():
 	def possoble_placements(self):
 		return [x for x in self.board if x == 0]
 
+	def winner(self):
+		top_array_road_white = [self.peak_from_index(x) % 2 == 0 and self.peak_from_index(x) & 0x02 == 0 for x in xrange(self.board_size * self.board_size)]
+		top_array_road_black = [self.peak_from_index(x) % 2 == 1 and self.peak_from_index(x) & 0x02 == 0 for x in xrange(self.board_size * self.board_size)]
+
+		black_win = find_road(top_array_road_black, 1)
+		white_win = find_road(top_array_road_white, 0)
+
+		if black_win != None:
+			return ["Black", black_win]
+
+		if white_win != None:
+			return ["White", white_win]
+				
+		#look at edges and try to connect
+
+
+	def find_roads(self, top_array, color):
+		edges = [range(0,self.board_size) + range(self.board_size,self.board_size*self.board_size+1,self.board_size)]
+
+		for x in edges:
+			if top_array[x]:
+				#Edge is color start 
+
+				#Connect all roads to list
+				#See if a right set in list see if a left set in list
+				#See if a top set in list see if a bottom set in list
+
+	def index_size(self, index):
+		stack = self.board[index]
+		size = 0
+
+		while stack > 0:
+			size +=1
+			stack >> 3
+
+		return min(self.board_size, size)
+
 	def possoble_moves(self, color):
 		#Color white=0, black=1
 		controlled_stacks = [x for x in self.board if self.peak_from_index(x) % 2 == color]
 
+		top_stacks = [x for x in self.board if self.peak_from_index(x) & 0x06 != 0]
+
+
+		#start,end,placementarray
+		moves = []
+
 		for index in controlled_stacks:
-			if self.peak_from_index(index) & 0x04 != 0:
-				#Cap Stone
+			max_stack_move = self.index_size(index)
+
+			length_ends = [1,1,1,1]#Top,Right,Bottom,Left
+			ends = []
+			#Get Left right ends
+			for x in range(max_stack_move+1):
+				#Right
+				if x+1 != length_ends[1] and (index +length_ends[1])%self.board_size !=0 and (index + length_ends[1] not in top_stacks):
+					ends.append(index +length_ends[1])
+
+				#Left
+				if x+1 != length_ends[3] and (index +length_ends[3])%self.board_size !=0 and (index + length_ends[3] not in top_stacks):
+					ends.append(index +length_ends[3])
+
+				#Top
+				if x+1 != length_ends[0] and (index +length_ends[0])%self.board_size !=0 and (index + length_ends[0] not in top_stacks):
+					ends.append(index +length_ends[0])
+				
+				#Bottom
+				if x+1 != length_ends[2] and (index +length_ends[2])%self.board_size !=0 and (index + length_ends[2] not in top_stacks):
+					ends.append(index +length_ends[2])
+
+
+		#Add capstone break walls if capstone
 			
 			#check all directons for walls/capstones and end of line
 			pass
