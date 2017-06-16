@@ -1,5 +1,3 @@
-import sqlite3, os.path, requests, datetime, re
-
 class PlayTak(object):
 	"""Utility to get playtak.com data"""
 	def __init__(self):
@@ -8,14 +6,14 @@ class PlayTak(object):
 		self.connection = sqlite3.connect("games_anon.db")
 		self.cursor = self.connection.cursor()
 
-		self.cursor.execute("""SELECT * FROM games WHERE games.result != "1-0" OR games.result != "0-1" """)
+		self.cursor.execute("""SELECT * FROM games WHERE games.result != "0-0" """)
 		self.notation_array = self.cursor.fetchall() 
 
 		for x in self.notation_array:
-			self.sql_to_ptn(x)
+			print self.sql_to_ptn(x)
 
 	def sql_to_ptn(self, sqlentry):
-		print self.server_to_ptn({"date": sqlentry[1], "size":sqlentry[2], "player_white": sqlentry[3], "player_black": sqlentry[4], "moves": self.parse_server_to_dict(sqlentry[5]), "result": sqlentry[6]})
+		return self.server_to_ptn({"date": sqlentry[1], "size":sqlentry[2], "player_white": sqlentry[3], "player_black": sqlentry[4], "moves": self.parse_server_to_dict(sqlentry[5]), "result": sqlentry[6]})
 
 	def download_sqllite(self):
 		r = requests.get("https://www.playtak.com/games_anon.db", stream=True)
