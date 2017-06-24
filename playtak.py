@@ -20,7 +20,14 @@ class PlayTak(object):
 		
 		if r.status_code == 200:
 			with open('games_anon.db', 'wb') as f:
-				f.write(r.content)
+				f.write(r.content)	
+	
+	def get_all_games(self):
+		all_boards = []
+		for game in self.notation_array:
+			all_boards = self.sql_to_numpy(game)
+
+		print(all_boards)
 
 	def server_to_ptn(self, game):
 		ptn_out = ""
@@ -77,8 +84,51 @@ class PlayTak(object):
 				raise ValueError('Error Parcing move: \"' + move + "\"")
 		return player_moves	
 
-	def get_complete_games(self):
-		pass
+	def rotate_moves(self, moves, angle, size):
+		#angle can be 1=90,2=180,3=270
+		player_moves = []
+		for move in moves.split(","):
+			if move == None or move == "":
+				return ""
+			#print move
+			if move[0].lower() == "p":
+				# Place a piece
+				# Ex P E3 W
+				m = re.search("([a-zA-Z][0-9]+)\s?([WC])?", move[2:])
+				placement = m.group(1)
+				piece  = m.group(2)
+				player_moves.append({"movetype": move[0].lower(), "placement": self.rotate_pos(placement, angle, size), "piece": piece})
+			elif move[0].lower() == "m":
+				# Move a piece
+				# M FROM TO #PLACE+
+				#print move[2:]
+				m = re.match("([a-zA-Z][0-9]+)\s([a-zA-Z][0-9]+)\s([0-9\s]+)", move[2:])
+				start = m.group(1)
+				end = m.group(2)
+				#print m.group(3)
+				countarray = [int(x) for x in m.group(3).replace(" ", "")]
+				player_moves.append({"movetype": move[0].lower(), "start": self.rotate_pos(start, angle, size), "end": self.rotate_pos(end, angle, size), "order": countarray})
+			else:
+				#Parcing Error
+				raise ValueError('Error Parcing move: \"' + move + "\"")
+		return player_moves	
+
+	def rotate_pos(self, pos, angle, size):
+		ret =""
+		if angle <= 2:
+			#reflect Letter for 90 or 180
+			ret =  chr((ord("A") + size -1) - (ord(pos[0]) - ord("A") ))
+		else:
+			ret = pos[0]
+
+		if angle >= 2:
+			#reflect number for 180 270
+			ret += str( size - (int(pos[1:]) - 1 ))
+		else:
+			ret +=pos[1:]
+
+		return ret
+
 
 	def output_to_ptn(self, move, size):
 		output = {}
@@ -130,4 +180,10 @@ class PlayTak(object):
 
 			
 if __name__ == '__main__':
+	#download/load file
 	b = PlayTak()
+
+	#get all games 
+	all_games = b.get_all_games()
+
+	#Create Threads to generate output states
