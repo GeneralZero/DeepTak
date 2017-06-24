@@ -1,12 +1,14 @@
+import sqlite3, os.path, requests, datetime, re
+
 class PlayTak(object):
 	"""Utility to get playtak.com data"""
 	def __init__(self):
-		if not os.path.isfile("games_anon.db"):
+		if not os.path.isfile("ptn\\games_anon.db"):
 			self.download_sqllite()
-		self.connection = sqlite3.connect("games_anon.db")
+		self.connection = sqlite3.connect("ptn\\games_anon.db")
 		self.cursor = self.connection.cursor()
 
-		self.cursor.execute("""SELECT * FROM games WHERE games.result != "0-0" """)
+		self.cursor.execute("""SELECT * FROM games WHERE games.result != "0-0" and games.size = 5 """)
 		self.notation_array = self.cursor.fetchall() 
 
 		for x in self.notation_array:
