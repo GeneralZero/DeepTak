@@ -16,7 +16,52 @@ class PlayTak(object):
 
 	def sql_to_ptn(self, sqlentry):
 		return self.server_to_ptn({"date": sqlentry[1], "size":sqlentry[2], "player_white": sqlentry[3], "player_black": sqlentry[4], "moves": self.parse_server_to_dict(sqlentry[5]), "result": sqlentry[6]})
+	
+	def sql_to_numpy(self, sqlentry):
+		ret = None
+		moves = self.parse_server_to_dict(sqlentry[5])
 
+		game = TakBoard()
+
+		#Start Game
+		is_white = True
+
+		#Start at move 3 to simplify the placements
+		for index, move in enumerate(moves):
+			if index == 1:
+				#Move Board
+				if move.movetype == "p":
+					game.place(move.piece, move.placement, False)
+				elif move.movetype == "m":
+					game.move(move.start, move.end, move.order)
+				else:
+					raise ValueError("Invalid Movetype")
+
+			elif index == 2:
+				#Move Board
+				if move.movetype == "p":
+					game.place(move.piece, move.placement, True)
+				elif move.movetype == "m":
+					game.move(move.start, move.end, move.order)
+				else:
+					raise ValueError("Invalid Movetype")
+
+			elif index > 2:
+				#Move Board
+				if move.movetype == "p":
+					game.place(move.piece, move.placement, is_white)
+				elif move.movetype == "m":
+					game.move(move.start, move.end, move.order)
+				else:
+					raise ValueError("Invalid Movetype")
+
+				is_white = not is_white
+
+				#Get updated board
+				ret = np.append(ret, np.array(game.get_current_board()))
+
+		return ret
+	
 	def download_sqllite(self):
 		r = requests.get("https://www.playtak.com/games_anon.db", stream=True)
 		
