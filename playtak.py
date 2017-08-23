@@ -1,4 +1,6 @@
-import sqlite3, os.path, requests, datetime, re
+import sqlite3, os.path, requests, datetime, re, pickle
+import numpy as np
+from board import TakBoard
 
 class PlayTak(object):
 	"""Utility to get playtak.com data"""
@@ -8,28 +10,81 @@ class PlayTak(object):
 		self.connection = sqlite3.connect("ptn\\games_anon.db")
 		self.cursor = self.connection.cursor()
 
-		self.cursor.execute("""SELECT * FROM games WHERE games.result != "0-0" and games.size = 5 """)
+		self.cursor.execute("""SELECT * FROM games WHERE (games.result == "0-R" or games.result == "R-0") and games.size = 5 """)
 		self.notation_array = self.cursor.fetchall() 
 
-		for x in self.notation_array:
-			print self.sql_to_ptn(x)
+		#print(len(self.notation_array))
+
+		#for x in self.notation_array:
+		#	self.sql_to_ptn(x)
 
 	def sql_to_ptn(self, sqlentry):
 		return self.server_to_ptn({"date": sqlentry[1], "size":sqlentry[2], "player_white": sqlentry[3], "player_black": sqlentry[4], "moves": self.parse_server_to_dict(sqlentry[5]), "result": sqlentry[6]})
+
+	def sql_to_numpy(self, sqlentry):
+		ret = []
+		moves = self.parse_server_to_dict(sqlentry[5])
+
+		game = TakBoard(5)
+
+		#Start Game
+		is_white = False
+
+		#Start at move 3 to simplify the placements
+		for index, move in enumerate(moves):
+			if index == 2:
+				is_white = False
+
+			#print(index,is_white)
+
+			#Move Board
+			try:
+				if move["movetype"] == "p":
+					game.place(move["piece"], move["placement"], is_white)
+				elif move["movetype"] == "m":
+					game.move(move["start"], move["end"], move["order"])
+				else:
+					raise ValueError("Invalid Movetype")
+			except:
+				return None
+
+			#Update
+			is_white = not is_white
+
+			#Get updated board
+			#print(np.array(game.get_current_board()))
+			ret.append(np.array(game.get_current_board()))
+
+		return ret
 
 	def download_sqllite(self):
 		r = requests.get("https://www.playtak.com/games_anon.db", stream=True)
 		
 		if r.status_code == 200:
-			with open('games_anon.db', 'wb') as f:
+			with open("ptn\\games_anon.db", 'wb') as f:
 				f.write(r.content)	
 	
 	def get_all_games(self):
-		all_boards = []
-		for game in self.notation_array:
+		for index, game in enumerate(self.notation_array):
 			all_boards = self.sql_to_numpy(game)
+			all_boards = np.array(all_boards)
+			#print(len(all_boards), type(all_boards))
+			if type(all_boards) == np.ndarray:
+				print("Write file gamedata_{}".format(index))
+				with open("ptn\\gamedata_{}".format(index), 'wb') as f:
+					pickle.dump(all_boards, f)
 
-		print(all_boards)
+		#Rotate Boards 90
+		#with h5py.File('ptn\\gamedata_90.h5', 'w') as h5f:
+		#	h5f.create_dataset('gamedata_90', data=all_boards)
+
+		#Rotate Boards 180
+		#with h5py.File('ptn\\gamedata_180.h5', 'w') as h5f:
+		#	h5f.create_dataset('gamedata_180', data=all_boards)
+
+		#Rotate Boards 270
+		#with h5py.File('ptn\\gamedata_270.h5', 'w') as h5f:
+		#	h5f.create_dataset('gamedata_270', data=all_boards)
 
 	def server_to_ptn(self, game):
 		ptn_out = ""
@@ -180,12 +235,23 @@ class PlayTak(object):
 		else:
 			raise ValueError("Invalid Move Type")
 
+	def analyseTak(self, move, white_turn, ptn_file):
+		exe = "C:\\Users\\generalzero\\Documents\\Go\\bin\\analyzetak.exe"
+
+		process = None
+		
+		if white_turn:
+			process = subprocess.Popen([exe, "-move", move, "-white", ptn_file])
+		else:
+			process = subprocess.Popen([exe, "-move", move, "-white", ptn_file])
+
+		print(process.communicate())
+
+
 			
 if __name__ == '__main__':
 	#download/load file
 	b = PlayTak()
 
-	#get all games 
+	#Save Game data
 	all_games = b.get_all_games()
-
-	#Create Threads to generate output states
