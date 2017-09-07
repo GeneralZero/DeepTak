@@ -1,6 +1,8 @@
 import sqlite3, os.path, requests, datetime, re, pickle
 import numpy as np
 from board import TakBoard
+import zipfile
+
 
 class PlayTak(object):
 	"""Utility to get playtak.com data"""
@@ -20,14 +22,14 @@ class PlayTak(object):
 		#for x in self.notation_array:
 		#	self.sql_to_ptn(x)
 
-	def sql_to_ptn(self, sqlentry):
+	def sql_to_ptn(self, sqlentry, transformation):
 		return self.server_to_ptn(
 			{"date": sqlentry[1], 
 			"size":sqlentry[2], 
 			"player_white": sqlentry[3], 
 			"player_black": sqlentry[4], 
 			"moves": self.parse_server_to_dict(sqlentry[5]), 
-			"result": sqlentry[6]}, 3)
+			"result": sqlentry[6]}, transformation)
 
 	def sql_to_numpy(self, sqlentry):
 		ret = []
@@ -95,14 +97,15 @@ class PlayTak(object):
 		#	h5f.create_dataset('gamedata_270', data=all_boards)
 
 	def get_all_games_ptn(self):
-		for index, game in enumerate(self.notation_array):
-			if index == 545:
-				ptn_board_string = self.sql_to_ptn(game)
-				print("Write file gamedata_{}".format(index))
-				with open(os.path.join(os.getcwd(), "ptn", "gamedata_{}.ptn".format(index)), 'w') as f:
-					f.write(ptn_board_string)
+		for transformation in [0,1,2,3]:
+			with zipfile.ZipFile(os.path.join(os.getcwd(), "ptn", "ptn_rot_{}.zip".format(transformation)), "w") as newZip:
+				for index, game in enumerate(self.notation_array):
+					ptn_board_string = self.sql_to_ptn(game, transformation)
+					print("Write file gamedata_{}_tans_{}".format(index, transformation))
 
-	def server_to_ptn(self, game, rotate=0):
+					newZip.writestr("gamedata_{}.ptn".format(index), ptn_board_string)
+
+	def server_to_ptn(self, game, transformation=0):
 		ptn_out = ""
 
 		ptn_out += "[Event \"{}\"]\n".format("PlayTak.com")
@@ -111,7 +114,7 @@ class PlayTak(object):
 		ptn_out += "[Player1 \"{}\"]\n".format(game["player_white"])
 		ptn_out += "[Player2 \"{}\"]\n".format(game["player_black"])
 		ptn_out += "[Size \"{}\"]\n".format(game["size"])
-		ptn_out += "[Rotation \"{}\"]\n".format(rotate)
+		ptn_out += "[Transformation \"{}\"]\n".format(transformation)
 		ptn_out += "[Result \"{}\"]\n".format(game["result"])
 		ptn_out += "\n"
 
@@ -119,13 +122,13 @@ class PlayTak(object):
 		index = 1
 		while i < len(game["moves"]):
 			#print(game["moves"][i])
-			current_move = self.rotate_move(game["moves"][i], rotate, game["size"])
+			current_move = self.transform_move(game["moves"][i], transformation, game["size"])
 
 			out1 = self.output_to_ptn(current_move, game["size"])
 			out2 = ""
 			i += 1
 			if i < len(game["moves"]):
-				current_move = self.rotate_move(game["moves"][i], rotate, game["size"])
+				current_move = self.transform_move(game["moves"][i], transformation, game["size"])
 				out2 = self.output_to_ptn(current_move, game["size"])
 
 			ptn_out += "{}. {} {}\n".format(index, out1, out2)
@@ -163,39 +166,72 @@ class PlayTak(object):
 				raise ValueError('Error Parcing move: \"' + move + "\"")
 		return player_moves	
 
-	def rotate_move(self, move, angle, size):
-		#angle can be 1=90,2=180,3=270
+	def transform_move(self, move, transformation, size):
+		#transformation can be 1=90,2=180,3=270
 		if move["movetype"].lower() == "p":
-			test = self.rotate_pos(move["placement"], angle, size)
-			print("Rotating from {} to {}".format(move["placement"], test))
+			test = self.transform_pos(move["placement"], transformation, size)
+			#print("Rotating from {} to {}".format(move["placement"], test))
 			move["placement"] = test
 			return move
 		elif move["movetype"].lower() == "m":
 			#print(move)
-			move["start"] = self.rotate_pos(move["start"], angle, size)
-			move["end"] = self.rotate_pos(move["end"], angle, size)
+			move["start"] = self.transform_pos(move["start"], transformation, size)
+			move["end"] = self.transform_pos(move["end"], transformation, size)
 			return move
 		else:
 			#Parcing Error
 			raise ValueError('Error Parcing move: \"' + move + "\"")
 
-	def rotate_pos(self, pos, angle, size):
+	def transform_pos(self, pos, transformation, size):
 		ret =""
-		if angle == 0:
-			return pos
-		if angle <= 2:
-			#reflect Letter for 90 or 180
-			ret =  chr((ord("A") + size -1) - (ord(pos[0]) - ord("A") ))
-		else:
-			ret = pos[0]
 
-		if angle >= 2:
-			#reflect number for 180 270
-			ret += str( size - (int(pos[1:]) - 1 ))
-		else:
+		#No Transformation 
+		if transformation == 0:
+			return pos
+
+		#Flip Vertical
+		elif transformation == 1:
+			ret =  chr((ord("A") + size -1) - (ord(pos[0]) - ord("A") ))
 			ret +=pos[1:]
 
+		#Flip Horozontal and Vertical
+		elif transformation == 2:
+			#reflect Letter for 90 or 180
+			ret =  chr((ord("A") + size -1) - (ord(pos[0]) - ord("A") ))
+			ret += str( size - (int(pos[1:]) - 1 ))
+		
+		#Flip Horozontal
+		elif transformation == 3:
+			ret = pos[0]
+			ret += str( size - (int(pos[1:]) - 1 ))
+
+		#Rotate 90
+		elif transformation == 4:
+			pass
+
+		#Rotate 90 and Flip Vertical
+		elif transformation == 5:
+
+			ret =  chr((ord("A") + size -1) - (ord(pos[0]) - ord("A") ))
+			ret +=pos[1:]
+
+		#Rotate 90 and Flip Horozontal and Vertical
+		elif transformation == 6:
+
+			ret =  chr((ord("A") + size -1) - (ord(pos[0]) - ord("A") ))
+			ret += str( size - (int(pos[1:]) - 1 ))
+
+		#Rotate 90 and Flip Horozontal
+		elif transformation == 7:
+
+			ret = pos[0]
+			ret += str( size - (int(pos[1:]) - 1 ))
+
+		else:
+			raise ValueError("Error Parsing transformation {}".format(transformation))
+
 		return ret
+
 
 
 	def output_to_ptn(self, move, size):
