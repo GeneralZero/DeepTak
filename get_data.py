@@ -14,7 +14,7 @@ class PlayTak(object):
 		self.connection = sqlite3.connect(os.path.join(os.getcwd(), "ptn", "games_anon.db"))
 		self.cursor = self.connection.cursor()
 
-		self.cursor.execute("""SELECT * FROM games WHERE (games.result == "0-R" or games.result == "R-0") and games.size = 5 """)
+		self.cursor.execute("""SELECT * FROM games WHERE games.result == "0-R" and games.size = 5 """)
 		self.notation_array = self.cursor.fetchall() 
 
 		#print(len(self.notation_array))
@@ -84,26 +84,15 @@ class PlayTak(object):
 				with open(os.path.join(os.getcwd(), "ptn", "gamedata_{}".format(index)), 'wb') as f:
 					pickle.dump(all_boards, f)
 
-		#Rotate Boards 90
-		#with h5py.File('ptn\\gamedata_90.h5', 'w') as h5f:
-		#	h5f.create_dataset('gamedata_90', data=all_boards)
-
-		#Rotate Boards 180
-		#with h5py.File('ptn\\gamedata_180.h5', 'w') as h5f:
-		#	h5f.create_dataset('gamedata_180', data=all_boards)
-
-		#Rotate Boards 270
-		#with h5py.File('ptn\\gamedata_270.h5', 'w') as h5f:
-		#	h5f.create_dataset('gamedata_270', data=all_boards)
-
 	def get_all_games_ptn(self):
-		for transformation in [0,1,2,3]:
-			with zipfile.ZipFile(os.path.join(os.getcwd(), "ptn", "ptn_rot_{}.zip".format(transformation)), "w") as newZip:
+		for transformation in [0,1,2,3,4,5,6,7]:
+			with zipfile.ZipFile(os.path.join(os.getcwd(), "ptn", "Black_Win_size_5_rot_{}.zip".format(transformation)), "w") as newZip:
 				for index, game in enumerate(self.notation_array):
 					ptn_board_string = self.sql_to_ptn(game, transformation)
-					print("Write file gamedata_{}_tans_{}".format(index, transformation))
+					print("Write file gamedata_{}.ptn for Transformation {}".format(index, transformation))
 
 					newZip.writestr("gamedata_{}.ptn".format(index), ptn_board_string)
+
 
 	def server_to_ptn(self, game, transformation=0):
 		ptn_out = ""
@@ -207,22 +196,35 @@ class PlayTak(object):
 
 		#Rotate 90
 		elif transformation == 4:
-			pass
+			ret = chr(int(pos[1:]) + ord("A") - 1)
+			ret += str(size - (ord(pos[0]) - ord("A")))
 
 		#Rotate 90 and Flip Vertical
 		elif transformation == 5:
+			ret = chr(int(pos[1:]) + ord("A") - 1)
+			ret += str(size - (ord(pos[0]) - ord("A")))
+
+			pos = ret
 
 			ret =  chr((ord("A") + size -1) - (ord(pos[0]) - ord("A") ))
 			ret +=pos[1:]
 
 		#Rotate 90 and Flip Horozontal and Vertical
 		elif transformation == 6:
+			ret = chr(int(pos[1:]) + ord("A") - 1)
+			ret += str(size - (ord(pos[0]) - ord("A")))
+
+			pos = ret
 
 			ret =  chr((ord("A") + size -1) - (ord(pos[0]) - ord("A") ))
 			ret += str( size - (int(pos[1:]) - 1 ))
 
 		#Rotate 90 and Flip Horozontal
 		elif transformation == 7:
+			ret = chr(int(pos[1:]) + ord("A") - 1)
+			ret += str(size - (ord(pos[0]) - ord("A")))
+
+			pos = ret
 
 			ret = pos[0]
 			ret += str( size - (int(pos[1:]) - 1 ))
