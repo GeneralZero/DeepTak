@@ -48,13 +48,14 @@ class PlayTak(object):
 
 			#Move Board
 			try:
-				if move["movetype"] == "p":
+				if move["movetype"] == 'p':
 					game.place(move["piece"], move["placement"], is_white)
-				elif move["movetype"] == "m":
+				elif move["movetype"] == 'm':
 					game.move(move["start"], move["end"], move["order"])
 				else:
 					raise ValueError("Invalid Movetype")
-			except:
+			except Exception as e:
+				print(e)
 				return None
 
 			#Update
@@ -82,6 +83,9 @@ class PlayTak(object):
 						#print(len(all_boards), type(all_boards))
 						#print("Write file gamedata_{}.pickle for Transformation {}".format(index, transformation))
 						newZip.writestr("gamedata_{}.pickle".format(index), pickle.dumps(all_boards))
+					else:
+						print("Error with gamedata_{}.pickle for Transformation {}".format(index, transformation))
+						#print("Null Error")
 
 
 

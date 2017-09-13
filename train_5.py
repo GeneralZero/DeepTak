@@ -8,7 +8,7 @@ from keras.layers.recurrent import LSTM
 from keras.layers.convolutional import Conv3D
 from keras.layers.convolutional_recurrent import ConvLSTM2D
 
-import pickle, os, zipfile, random
+import pickle, os, zipfile, random, math
 
 class Tak_Train(object):
 	"""docstring for Tak_Train"""
@@ -108,15 +108,12 @@ class Tak_Train(object):
 		y_data = []
 
 		for game_index, tak_game_states in enumerate(all_tak_game_states):
-			print("Generating Traing Data for Game Index {}".format(game_index))
+			#print("Generating Traing Data for Game Index {}".format(game_index))
 
 			#Start Game
 			is_white_move = False
 
-			pre_moves = []
-			post_moves = []
-
-			print(tak_game_states)
+			#print(tak_game_states)
 			
 			for move_index, game_state in enumerate(tak_game_states):
 				if move_index == 2:
@@ -125,27 +122,33 @@ class Tak_Train(object):
 				if is_white == is_white_move:
 					#Is Black and is black move or is white and is white move
 					#Pre_move
-					pre_moves.append(np.array(game_state))
+					x_data.append(game_state)
 				else:
 					#Is black and is white move or is white and is black move
 					#Post_move
-					post_moves.append(np.array(game_state))
+					y_data.append(game_state)
 
 
 				#Update
 				is_white_move = not is_white_move
-
-			x_data.append(np.array(pre_moves))
-			y_data.append(np.array(post_moves))
-
+		print(x_data[5])
 		return np.array(x_data), np.array(y_data)
 
+	def convert_list_to_np(self, game_state):
+		flat_list = []
+		for colums in game_state:
+			for rows in colums:
+				#Elements
+				#flat_list.append(np.array(rows, dtype=str))
+				flat_list.append(rows)
+
+		return np.array(flat_list)
 
 	def define_model(self):
 		print("Setup Model")
 		self.model = Sequential()
 
-		self.model.add(LSTM(self.hidden_units, input_shape=(None, self.tak_size, self.tak_size), return_sequences=True))
+		self.model.add(LSTM(self.hidden_units, input_shape=(self.tak_size * self.tak_size, None), return_sequences=True))
 		self.model.add(LSTM(self.hidden_units, return_sequences=True))
 		self.model.add(LSTM(self.hidden_units, return_sequences=True))
 		self.model.add(LSTM(self.hidden_units, return_sequences=True))
@@ -167,3 +170,4 @@ if __name__ == '__main__':
 	test = Tak_Train()
 
 	test.load_data()
+
