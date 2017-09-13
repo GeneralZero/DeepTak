@@ -14,7 +14,7 @@ class PlayTak(object):
 		self.connection = sqlite3.connect(os.path.join(os.getcwd(), "ptn", "games_anon.db"))
 		self.cursor = self.connection.cursor()
 
-		self.cursor.execute("""SELECT * FROM games WHERE games.result == "0-R" and games.size = 5 """)
+		self.cursor.execute("""SELECT * FROM games WHERE games.result == "R-0" and games.size = 5 """)
 		self.notation_array = self.cursor.fetchall() 
 
 		#print(len(self.notation_array))
@@ -40,7 +40,6 @@ class PlayTak(object):
 		#Start Game
 		is_white = False
 
-		#Start at move 3 to simplify the placements
 		for index, move in enumerate(moves):
 			if index == 2:
 				is_white = False
@@ -62,8 +61,8 @@ class PlayTak(object):
 			is_white = not is_white
 
 			#Get updated board
-			#print(np.array(game.get_current_board()))
-			ret.append(np.array(game.get_current_board()))
+			#print(game.get_current_string_board())
+			ret.append(game.get_current_string_board())
 
 		return ret
 
@@ -75,18 +74,20 @@ class PlayTak(object):
 				f.write(r.content)	
 	
 	def get_all_games_pickle(self):
-		for index, game in enumerate(self.notation_array):
-			all_boards = self.sql_to_numpy(game)
-			all_boards = np.array(all_boards)
-			#print(len(all_boards), type(all_boards))
-			if type(all_boards) == np.ndarray:
-				print("Write file gamedata_{}".format(index))
-				with open(os.path.join(os.getcwd(), "ptn", "gamedata_{}".format(index)), 'wb') as f:
-					pickle.dump(all_boards, f)
+		for transformation in [0,1,2,3,4,5,6,7]:
+			with zipfile.ZipFile(os.path.join(os.getcwd(), "ptn", "White_Win_pickle_size_5_rot_{}.zip".format(transformation)), "w", compression=zipfile.ZIP_DEFLATED) as newZip:
+				for index, game in enumerate(self.notation_array):
+					all_boards = self.sql_to_numpy(game)
+					if type(all_boards) == list:
+						#print(len(all_boards), type(all_boards))
+						#print("Write file gamedata_{}.pickle for Transformation {}".format(index, transformation))
+						newZip.writestr("gamedata_{}.pickle".format(index), pickle.dumps(all_boards))
+
+
 
 	def get_all_games_ptn(self):
 		for transformation in [0,1,2,3,4,5,6,7]:
-			with zipfile.ZipFile(os.path.join(os.getcwd(), "ptn", "Black_Win_size_5_rot_{}.zip".format(transformation)), "w") as newZip:
+			with zipfile.ZipFile(os.path.join(os.getcwd(), "ptn", "White_Win_size_5_rot_{}.zip".format(transformation)), "w") as newZip:
 				for index, game in enumerate(self.notation_array):
 					ptn_board_string = self.sql_to_ptn(game, transformation)
 					print("Write file gamedata_{}.ptn for Transformation {}".format(index, transformation))
@@ -303,7 +304,7 @@ if __name__ == '__main__':
 	b = PlayTak()
 
 	#Save Game data
-	#all_games = b.get_all_games_pickle()
+	all_games = b.get_all_games_pickle()
 
 	#Save Game data to PTN
-	all_games = b.get_all_games_ptn()
+	#all_games = b.get_all_games_ptn()

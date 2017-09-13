@@ -50,6 +50,18 @@ class TakBoard():
 
 		return self.board
 
+	def get_current_string_board(self):
+		board = []
+		for x in range(self.board_size -1, -1, -1):
+			row = []
+			for i in range(self.board_size):
+				test = self.pretty_print_cell(self.board[x*self.board_size + i])
+				row.append(test)
+			board.append(row)
+		
+		return board
+
+
 	def winner(self):
 		top_array_road_white = [self.peak_from_index(x) % 2 == 0 and self.peak_from_index(x) & 0x02 == 0 for x in xrange(self.board_size * self.board_size)]
 		top_array_road_black = [self.peak_from_index(x) % 2 == 1 and self.peak_from_index(x) & 0x02 == 0 for x in xrange(self.board_size * self.board_size)]
@@ -184,14 +196,14 @@ class TakBoard():
 
 	def pretty_print_board(self):
 		for x in range(4, -1, -1):
-			print("{},{},{},{},{}".format(self.pretty_print_cell(self.board[x*5]),
-										  self.pretty_print_cell(self.board[x*5+1]),
-										  self.pretty_print_cell(self.board[x*5+2]),
-										  self.pretty_print_cell(self.board[x*5+3]),
-										  self.pretty_print_cell(self.board[x*5+4])))
+			print("{},{},{},{},{}".format("(" + "".join(self.pretty_print_cell(self.board[x*5])) + ")",
+										  "(" + "".join(self.pretty_print_cell(self.board[x*5+1])) + ")",
+										  "(" + "".join(self.pretty_print_cell(self.board[x*5+2])) + ")",
+										  "(" + "".join(self.pretty_print_cell(self.board[x*5+3])) + ")",
+										  "(" + "".join(self.pretty_print_cell(self.board[x*5+4])) + ")"))
 
 	def pretty_print_cell(self, index):
-		ret = "("
+		ret = []
 		while index > 0:
 			#Get Top
 			top = 0x07 & int(index)
@@ -200,29 +212,25 @@ class TakBoard():
 			#Flats
 			if (0x06 & top == 6):
 				if (top % 2 == 1):
-					ret += "b"
+					ret.append("b")
 				else:
-					ret += "w"
+					ret.append("w")
 
 			#Caps
 			elif (0x04 & top == 4):
 				if (top % 2 == 1):
-					ret += "Cb"
+					ret.append("Cb")
 				else:
-					ret += "Cw"
+					ret.append("Cw")
 
 			#Standing
 			elif (0x02 & top == 2):
 				if (top % 2 == 1):
-					ret += "Sb"
+					ret.append("Sb")
 				else:
-					ret += "Sw"
+					ret.append("Sw")
 
-			ret += ","
-
-		if ret == "(":
-			return "0"
-		return (ret[:-1] + ")")
+		return ret
 
 	def move(self, start, end, move_array):
 		#Valid Size
