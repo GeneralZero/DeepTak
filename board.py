@@ -31,10 +31,39 @@ class TakBoard():
 		self.player1_turn = True
 		
 		self.board_size = size
+		self.max_height = 64
 		self.board = [[[] for x in range(self.board_size)] for x in range(self.board_size)]
+
 
 	def get_current_string_board(self):
 		return self.board
+
+	def get_numpy_board(self):
+		encode = {
+			"w": 1,
+			"b": 2,
+			"sw": 3,
+			"sb": 4,
+			"ww": 3,
+			"wb": 4,
+			"cw": 5,
+			"cb": 6,
+		}
+
+		board_array=[]
+		
+		for row_index, rows in enumerate(self.board):
+			row_array = []
+			for col_index, cols in enumerate(rows):
+				cell = []
+				for height in cols:
+					cell.append(encode[height.lower()])
+				
+				cell = np.pad(np.array(cell), (0, self.max_height - len(cell)), 'constant')
+				row_array.append(cell)
+			board_array.append(row_array)
+
+		return np.array(board_array)
 
 	def get_square(self, grid_location):
 		x = (ord(grid_location[0].upper()) - ord("A"))
@@ -174,8 +203,9 @@ if __name__ == '__main__':
 	p.move("D3", "E3", [1])
 	p.place("", "A2", False)
 	p.move("E3", "E1", [1, 2])
-	for x in p.get_current_string_board():
-		print(x)
+	test = p.get_numpy_board()
+	print(test.shape)
+	
 	p.place("", "A3", False)
 	p.place("", "A1", True)
 	p.move("A2", "B2", [1])

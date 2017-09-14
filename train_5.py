@@ -5,7 +5,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.layers.recurrent import LSTM
 
-from keras.layers.convolutional import Conv3D
+from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional_recurrent import ConvLSTM2D
 
 import pickle, os, zipfile, random, math
@@ -20,7 +20,7 @@ class Tak_Train(object):
 		self.iterations = 3
 		self.epochs = 3
 
-		#self.define_model()
+		self.define_model()
 
 	def load_data_from_zip(self, white=True):
 		zip_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".zip")]
@@ -50,6 +50,8 @@ class Tak_Train(object):
 				#print(file_name)
 
 				game_array = pickle.loads(translation_zip[file_name])
+				#print(game_array)
+				#break
 				#print(np.array(game_array).shape)
 				tak_games.append(game_array)
 				
@@ -61,13 +63,13 @@ class Tak_Train(object):
 		#Load White Data
 		white_tak_games = self.load_data_from_pickle(self.load_data_from_zip(True))
 
-		random.shuffle(white_tak_games)
+		#random.shuffle(white_tak_games)
 
 		#Get White Input and Output data
 		white_x_train, white_y_train = self.board_to_training_data(white_tak_games, is_white=True)
 
-		print(white_x_train.shape)
-		print(white_y_train.shape)
+		#print(white_x_train.shape)
+		#print(white_y_train.shape)
 
 		#Split White to train and test data
 		white_x_test = white_x_train[int(math.ceil(split*len(white_x_train))):]
@@ -79,7 +81,7 @@ class Tak_Train(object):
 		print("Training White Win data")
 
 
-		self.train(white_x_train, white_y_train)
+		self.train(np.array(white_x_train), np.array(white_y_train))
 
 		#Load Black Data
 		black_tak_games = self.load_data_from_pickle(self.load_data_from_zip(False))
@@ -110,29 +112,35 @@ class Tak_Train(object):
 		for game_index, tak_game_states in enumerate(all_tak_game_states):
 			#print("Generating Traing Data for Game Index {}".format(game_index))
 
+			if game_index == 5:
+				break
+
 			#Start Game
 			is_white_move = False
 
-			#print(tak_game_states)
+			total_moves = len(tak_game_states)
+			#print(total_moves)
 			
 			for move_index, game_state in enumerate(tak_game_states):
-				if move_index == 2:
-					is_white_move = False
 
 				if is_white == is_white_move:
 					#Is Black and is black move or is white and is white move
 					#Pre_move
-					x_data.append(game_state)
+					if move_index
+					print(game_state)
+					x_data.append(np.array(game_state))
 				else:
 					#Is black and is white move or is white and is black move
 					#Post_move
-					y_data.append(game_state)
+					print("Diff{}  ".format(move_index), len(game_state))
+					y_data.append(np.array(game_state))
 
 
 				#Update
+				#print(len(x_data), len(y_data))
 				is_white_move = not is_white_move
-		print(x_data[5])
-		return np.array(x_data), np.array(y_data)
+
+		return x_data, y_data
 
 	def convert_list_to_np(self, game_state):
 		flat_list = []
@@ -148,12 +156,13 @@ class Tak_Train(object):
 		print("Setup Model")
 		self.model = Sequential()
 
-		self.model.add(LSTM(self.hidden_units, input_shape=(self.tak_size * self.tak_size, None), return_sequences=True))
-		self.model.add(LSTM(self.hidden_units, return_sequences=True))
-		self.model.add(LSTM(self.hidden_units, return_sequences=True))
-		self.model.add(LSTM(self.hidden_units, return_sequences=True))
+		self.model.add(Conv2D(64, (1, 1), activation='relu', input_shape=(self.tak_size, self.tak_size, 64)))
+		#self.model.add(LSTM(self.hidden_units, input_shape=(self.tak_size, self.tak_size), return_sequences=True))
+		#self.model.add(LSTM(self.hidden_units, return_sequences=True))
+		#self.model.add(LSTM(self.hidden_units, return_sequences=True))
+		#self.model.add(LSTM(self.hidden_units, return_sequences=True))
 
-		self.model.compile(loss='mean_squared_error', metrics=['accuracy'])
+		self.model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
 
 		self.model.summary()
 
@@ -163,7 +172,7 @@ class Tak_Train(object):
 
 			self.model.fit(x_train, y_train,
 				batch_size=self.batch_size,
-				epochs=self.epochs)
+				epochs=self.epochs, verbose=2)
 
 
 if __name__ == '__main__':

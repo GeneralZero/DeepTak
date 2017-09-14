@@ -1,4 +1,5 @@
 import sqlite3, os.path, requests, datetime, re, pickle
+import h5py
 import numpy as np
 from board import TakBoard
 import zipfile
@@ -63,7 +64,7 @@ class PlayTak(object):
 
 			#Get updated board
 			#print(game.get_current_string_board())
-			ret.append(game.get_current_string_board())
+			ret.append(game.get_numpy_board())
 
 		return ret
 
@@ -75,16 +76,20 @@ class PlayTak(object):
 				f.write(r.content)	
 	
 	def get_all_games_pickle(self):
-		for transformation in [0,1,2,3,4,5,6,7]:
+		for transformation in [0]:
 			with zipfile.ZipFile(os.path.join(os.getcwd(), "ptn", "White_Win_pickle_size_5_rot_{}.zip".format(transformation)), "w", compression=zipfile.ZIP_DEFLATED) as newZip:
 				for index, game in enumerate(self.notation_array):
 					all_boards = self.sql_to_numpy(game)
+					if index == 1000:
+						#Testing first
+						break
 					if type(all_boards) == list:
 						#print(len(all_boards), type(all_boards))
-						#print("Write file gamedata_{}.pickle for Transformation {}".format(index, transformation))
+						print("Write file gamedata_{}.pickle for Transformation {}".format(index, transformation))
 						newZip.writestr("gamedata_{}.pickle".format(index), pickle.dumps(all_boards))
 					else:
-						print("Error with gamedata_{}.pickle for Transformation {}".format(index, transformation))
+						pass
+						#print("Error with gamedata_{}.pickle for Transformation {}".format(index, transformation))
 						#print("Null Error")
 
 
