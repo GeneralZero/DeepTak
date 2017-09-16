@@ -59,7 +59,7 @@ class TakBoard():
 				for height in cols:
 					cell.append(encode[height.lower()])
 				
-				cell = np.pad(np.array(cell), (0, self.max_height - len(cell)), 'constant')
+				cell = np.pad(np.array(cell, dtype=int), (0, self.max_height - len(cell)), 'constant')
 				row_array.append(cell)
 			board_array.append(row_array)
 
@@ -113,6 +113,28 @@ class TakBoard():
 		#Change turn
 		self.player1_turn = not self.player1_turn
 
+	def check_for_wall_crush(self, current_square, pop_array):
+		#If last move and pops is 1 
+		#Check if has capstone in peice
+
+		piece = pop_array[0]
+		wall = self.get_square(current_square)
+		if len(wall) > 0:
+			wall = self.get_square(current_square)[-1]
+		else:
+			return
+		if piece[0].lower() == 'c' and wall != None and wall[0].lower() == 's':
+			#print("Capstone wall crush")
+			square = self.get_square(current_square)
+
+			if square == None:
+				square.append(wall[1:])
+			else:
+				square = square[:-1]
+				square.append(wall[1:])
+
+			self.set_square(current_square, square)
+
 	def move(self, start, end, move_array):
 		#Valid Size
 		if np.sum(move_array) > self.board_size:
@@ -136,8 +158,12 @@ class TakBoard():
 				pop_array = self.get_square(start)[-count:]
 				self.set_square(start, self.get_square(start)[:-count])
 
-				for pops in move_array:
+				for index, pops in enumerate(move_array):
 					current_square = current_square[0] + str(int(current_square[1:]) -1)
+
+					if len(move_array) -1 == index and pops == 1:
+						self.check_for_wall_crush(current_square, pop_array)
+
 					for x in range(pops):
 						self.append_square(current_square, pop_array.pop(0))
 
@@ -148,8 +174,12 @@ class TakBoard():
 				pop_array = self.get_square(start)[-count:]
 				self.set_square(start, self.get_square(start)[:-count])
 
-				for pops in move_array:
+				for index, pops in enumerate(move_array):
 					current_square = current_square[0] + str(int(current_square[1:]) +1)
+
+					if len(move_array) -1 == index and pops == 1:
+						self.check_for_wall_crush(current_square, pop_array)
+
 					for x in range(pops):
 						self.append_square(current_square, pop_array.pop(0))
 
@@ -162,8 +192,12 @@ class TakBoard():
 				pop_array = self.get_square(start)[-count:]
 				self.set_square(start, self.get_square(start)[:-count])
 
-				for pops in move_array:
+				for index, pops in enumerate(move_array):
 					current_square = chr(ord(current_square[0]) - 1) + current_square[1:]
+
+					if len(move_array) -1 == index and pops == 1:
+						self.check_for_wall_crush(current_square, pop_array)
+
 					for x in range(pops):
 						self.append_square(current_square, pop_array.pop(0))
 
@@ -174,8 +208,12 @@ class TakBoard():
 				pop_array = self.get_square(start)[-count:]
 				self.set_square(start, self.get_square(start)[:-count])
 
-				for pops in move_array:
+				for index, pops in enumerate(move_array):
 					current_square = chr(ord(current_square[0]) + 1) + current_square[1:]
+
+					if len(move_array) -1 == index and pops == 1:
+						self.check_for_wall_crush(current_square, pop_array)
+
 					for x in range(pops):
 						self.append_square(current_square, pop_array.pop(0))
 		else:
@@ -187,6 +225,25 @@ class TakBoard():
 if __name__ == '__main__':
 	p= TakBoard(5)
 
+	p.place("", "D4", False)
+	p.place("", "C3", True)
+	p.place("C", "D3", True)
+	p.place("C", "C4", False)
+	p.place("S", "D5", True)
+	p.place("S", "B4", False)
+	#for x in p.get_current_string_board():
+	#	print(x)
+	#print()
+	p.move("D5", "D4", [1])
+	#for x in p.get_current_string_board():
+	#	print(x)
+	p.move("C4", "B4", [1])
+	p.place("", "C4", True)
+	p.move("B4", "D4", [1, 1])
+	for x in p.get_current_string_board():
+		print(x)
+
+"""
 	p.place("", "E1", False)
 	p.place("", "D1", True)
 	p.place("", "D2", True)
@@ -218,3 +275,4 @@ if __name__ == '__main__':
 	p.place("", "B1", True)
 	p.place("W", "C1", False)
 	p.move("E1", "C1", [2, 1])
+"""
