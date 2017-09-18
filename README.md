@@ -1,5 +1,5 @@
 Deep Tak: A Tak AI
-########################################
+##################
 
 Deep Tak is a Deep Learning AI that is made through games played on https://www.playtak.com/.
 The goal is .... Deep Tak is a hobby project to learn deeplearning with an actual 
@@ -11,6 +11,9 @@ generally interacting with HTTP servers.
 
 Try to beat me on playTak.com 
 
+.. contents::
+
+.. section-numbering::
 
 What is Tak?
 =============
