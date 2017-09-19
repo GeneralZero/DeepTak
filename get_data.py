@@ -1,4 +1,4 @@
-import sqlite3, os.path, requests, datetime, re, pickle
+import sqlite3, os.path, requests, datetime, re, pickle, traceback
 import h5py
 import numpy as np
 from board import TakBoard
@@ -15,7 +15,7 @@ class PlayTak(object):
 		self.connection = sqlite3.connect(os.path.join(os.getcwd(), "ptn", "games_anon.db"))
 		self.cursor = self.connection.cursor()
 
-		self.cursor.execute("""SELECT * FROM games WHERE games.result == "R-0" and games.size = 5 """)
+		self.cursor.execute("""SELECT * FROM games WHERE games.result == "0-R" and games.size = 5 """)
 		self.notation_array = self.cursor.fetchall() 
 
 		#print(len(self.notation_array))
@@ -25,7 +25,8 @@ class PlayTak(object):
 
 	def sql_to_ptn(self, sqlentry, transformation):
 		return self.server_to_ptn(
-			{"date": sqlentry[1], 
+			{"id": sqlentry[0], 
+			"date": sqlentry[1], 
 			"size":sqlentry[2], 
 			"player_white": sqlentry[3], 
 			"player_black": sqlentry[4], 
@@ -38,6 +39,9 @@ class PlayTak(object):
 
 		game = TakBoard(5)
 
+		##Get Blank Board
+		ret.append(game.get_numpy_board())
+
 		#Start Game
 		is_white = False
 
@@ -45,7 +49,7 @@ class PlayTak(object):
 			if index == 2:
 				is_white = False
 
-			#print(index,is_white)
+			#print(move)
 
 			#Move Board
 			try:
@@ -57,6 +61,8 @@ class PlayTak(object):
 					raise ValueError("Invalid Movetype")
 			except Exception as e:
 				print(e)
+				#traceback.print_exc()
+				#exit()
 				return None
 
 			#Update
@@ -66,6 +72,8 @@ class PlayTak(object):
 			#print(game.get_current_string_board())
 			ret.append(game.get_numpy_board())
 
+		#if len(ret) % 2 == 1:
+		#	print("Odd game {}".format(sqlentry[0]))
 		return ret
 
 	def download_sqllite(self):
@@ -75,24 +83,19 @@ class PlayTak(object):
 			with open(os.path.join(os.getcwd(), "ptn", "games_anon.db"), 'wb') as f:
 				f.write(r.content)	
 	
-	def get_all_games_pickle(self):
-		for transformation in [0]:
-			with zipfile.ZipFile(os.path.join(os.getcwd(), "ptn", "White_Win_pickle_size_5_rot_{}.zip".format(transformation)), "w", compression=zipfile.ZIP_DEFLATED) as newZip:
+	def get_all_games_h5(self):
+		for transformation in [7]:
+			with h5py.File(os.path.join(os.getcwd(), "ptn", "Black_Win_size_5_rot_{}.h5".format(transformation)), "w") as hf:
 				for index, game in enumerate(self.notation_array):
 					all_boards = self.sql_to_numpy(game)
-					if index == 1000:
-						#Testing first
-						break
 					if type(all_boards) == list:
 						#print(len(all_boards), type(all_boards))
-						print("Write file gamedata_{}.pickle for Transformation {}".format(index, transformation))
-						newZip.writestr("gamedata_{}.pickle".format(index), pickle.dumps(all_boards))
+						print("Write file gamedata_{} for Transformation {}".format(index, transformation))
+						hf.create_dataset("gamedata_{}".format(index), data=all_boards, compression="gzip", compression_opts=9)
 					else:
 						pass
 						#print("Error with gamedata_{}.pickle for Transformation {}".format(index, transformation))
 						#print("Null Error")
-
-
 
 	def get_all_games_ptn(self):
 		for transformation in [0,1,2,3,4,5,6,7]:
@@ -313,7 +316,7 @@ if __name__ == '__main__':
 	b = PlayTak()
 
 	#Save Game data
-	all_games = b.get_all_games_pickle()
+	all_games = b.get_all_games_h5()
 
 	#Save Game data to PTN
 	#all_games = b.get_all_games_ptn()
