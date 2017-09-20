@@ -1,62 +1,59 @@
-def count_inputs(self, hd5f_files)
-	count = 0
-	with h5py.File(os.path.join(os.getcwd(), "ptn", file_name), 'r') as hf:
-		x_train = hf["x_train"][:]
-		count += x_train.shape[0]
+from board import TakBoard
+import numpy as np
+import h5py, os
+np.set_printoptions(threshold=np.nan)
 
-	return count
+if __name__ == '__main__':
+	test = TakBoard(5)
+	test2 = TakBoard(5)
+	before = None
+	after = None
 
-def validate_all(self, validate_generator):
-	score = self.model.evaluate_generator(validate_generator, steps)
-	print("Validation (Accuracy) = {}".format(score[1]))
+	with h5py.File(os.path.join(os.getcwd(), "ptn", "White_train_rot0_part0.h5"), 'r') as hf:
+		#37 move
+		#54
+		before = hf["x_train"][:][37]
+		after = hf["y_train"][:][37]
 
-#https://stats.stackexchange.com/questions/154879/a-list-of-cost-functions-used-in-neural-networks-alongside-applications
-
-
-#https://keras.io/regularizers/
-#https://github.com/fchollet/keras/issues/1498
-#https://github.com/fchollet/keras/issues/2745
-
-#Dropout
-#https://keras.io/layers/core/
-
-#Keras
-#keras.callbacks.TensorBoard(log_dir='./Graph', histogram_freq=0, write_graph=True, write_images=True)
-
-###
-###
-###
-def get_internal_cell(self)
-	out_list = []
-	for element in cell:
-		for key, value in self.encode.itteritems():
-			if value = element:
-				out_list.append(key)
-
-	return out_list
-
-def set_np_game_board(self, move_board):
-	#Get Rows
-	for x, row in enumerate(self.board):
-		for y, cell in enumerate(row):
-			move_cell = self.get_internal_cell(move_board[x][y])
-			self.board[x][y] = move_cell
+	white_move=True
 
 
+	#print(before)
+	#print(after)
 
-def get_move_from_new_board(self, move_board):
-	changes = []
-	#Get Rows
-	for x, row in enumerate(self.board):
-		for y, cell in enumerate(row):
-			#Convert cell to be compared
-			move_cell = self.get_internal_cell(move_board[x][y])
+	test.set_np_game_board(before, white_move)
+
+	#for x in test.get_current_string_board():
+	#	print(x)
+
+	test2.set_np_game_board(after, not white_move)
+	changes = test.get_move_from_new_board(after)
+
+	#for x in test2.get_current_string_board():
+	#	print(x)
+
+	print(changes)
+
+	if len(changes) >= 2:
+		print()
 
 
-			if len(cell) == len(move_cell):
-				if cell != move_cell:
-					print("Change in the elements at the index x:{}, y:{}".format())
-					changes.append((x,y))
-			else:
-				print("Change in number of elements at index x:{}, y:{}".format())
-				changes.append((x,y))
+	#Place 
+	if len(changes) == 1:
+		change = changes[0]
+		out = test.get_index_from_int(change['x'],change['y'])
+		print(out)
+
+		if len(change["move_cell"]) == 1:
+			test.place("", out)
+		else:
+			test.place(change["move_cell"][0], out)
+	else:
+		#Move
+		index_list = []
+
+		for change in changes:
+			out = test.get_index_from_int(change['x'],change['y'])
+			index_list.append(out)
+
+		print(index_list)

@@ -78,7 +78,7 @@ class gen_Tak(object):
 				all_x_train = np.concatenate((all_x_train, white_x_train), axis=0)
 				all_y_train = np.concatenate((all_y_train, white_y_train), axis=0)
 
-			if index % 5000 == 4999:
+			if index % 5000 == 100:
 				print("Finished index: {}".format(index))
 				print(all_x_train.shape)
 				print(all_y_train.shape)
@@ -146,4 +146,4 @@ if __name__ == '__main__':
 	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
 	white_train_files = [filename for filename in training_files if filename.startswith("White_Win_size_5_rot")]
 
-	test.generate_training_data(white_train_files[3], 3)
+	test.generate_training_data(white_train_files[3], 3s
