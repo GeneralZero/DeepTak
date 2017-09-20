@@ -1,5 +1,5 @@
 Deep Tak: A Tak AI
-==================
+##################
 
 Deep Tak is a Deep Learning AI that is made through games played on [PlayTak.com](https://www.playtak.com/).
 The goal is to create a AI that will accurately produce "winning" moves.
@@ -8,12 +8,8 @@ Deep Tak is a hobby project to play around with Deep Learning software with a cl
 
 **Add Picture of Tak playing here**
 
-How to play Me
-==============
-1. Go to [PlayTak.com](https://www.playtak.com/).
-2. Start a New game with board size 5. (Currently only board trained)
-3. Try to win.
 
+Try to beat me on playTak.com 
 
 What is Tak?
 =============
@@ -22,4 +18,11 @@ Depending on the size of the game, players may also have capstones, which can ca
 
 The full rules are available for **FREE [here](http://cheapass.com/wp-content/uploads/2016/05/TakWebRules.pdf)**.
 
-
+How to play Me
+==============
+1. Go to [PlayTak.com](https://www.playtak.com/).
+2. Click **Login/Signup**
+3. Click **Signin as Guest**
+4. Click **Join Game**
+5. Select the **DeepTakBot** game
+6. Try to win.
