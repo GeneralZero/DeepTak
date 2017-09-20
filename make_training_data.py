@@ -1,17 +1,6 @@
-import keras
-import numpy as np
-
-from keras.models import Sequential
-from keras.layers.normalization import BatchNormalization
-from keras.layers.recurrent import LSTM
-from keras.layers.core import Activation, Reshape, Dense
-from keras.layers.pooling import MaxPooling1D
-from keras.layers.convolutional import Conv2D
-from keras.callbacks import ModelCheckpoint
-
 import pickle, os, zipfile, random, math
 import h5py
-import pandas as pd
+import numpy as np
 
 class gen_Tak(object):
 	"""docstring for Tak_Train"""
@@ -78,7 +67,7 @@ class gen_Tak(object):
 				all_x_train = np.concatenate((all_x_train, white_x_train), axis=0)
 				all_y_train = np.concatenate((all_y_train, white_y_train), axis=0)
 
-			if index % 5000 == 100:
+			if index % 5000 == 4999:
 				print("Finished index: {}".format(index))
 				print(all_x_train.shape)
 				print(all_y_train.shape)
@@ -87,7 +76,7 @@ class gen_Tak(object):
 
 				with h5py.File(os.path.join(os.getcwd(), "ptn", "White_train_rot{}_part{}.h5".format(part,i)), "w") as hf:
 					hf.create_dataset("x_train", data=all_x_train, compression="gzip", compression_opts=9)
-					hf.create_dataset("y_train", data=all_x_train, compression="gzip", compression_opts=9)
+					hf.create_dataset("y_train", data=all_y_train, compression="gzip", compression_opts=9)
 
 				i+=1
 				first = True
@@ -96,7 +85,7 @@ class gen_Tak(object):
 
 		with h5py.File(os.path.join(os.getcwd(), "ptn", "White_train_rot{}_part{}.h5".format(part,i)), "w") as hf:
 			hf.create_dataset("x_train", data=all_x_train, compression="gzip", compression_opts=9)
-			hf.create_dataset("y_train", data=all_x_train, compression="gzip", compression_opts=9)
+			hf.create_dataset("y_train", data=all_y_train, compression="gzip", compression_opts=9)
 
 		print("Finished")
 		print(all_x_train.shape)
@@ -146,4 +135,4 @@ if __name__ == '__main__':
 	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
 	white_train_files = [filename for filename in training_files if filename.startswith("White_Win_size_5_rot")]
 
-	test.generate_training_data(white_train_files[3], 3s
+	test.generate_training_data(white_train_files[3], 3)
