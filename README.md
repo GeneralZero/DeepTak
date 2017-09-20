@@ -1,5 +1,5 @@
 Deep Tak: A Tak AI
-##################
+=================
 
 Deep Tak is a Deep Learning AI that is made through games played on [PlayTak.com](https://www.playtak.com/).
 The goal is to create a AI that will accurately produce "winning" moves.
