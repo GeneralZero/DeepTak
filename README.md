@@ -18,7 +18,7 @@ Depending on the size of the game, players may also have capstones, which can ca
 
 The full rules are available for **FREE [here](http://cheapass.com/wp-content/uploads/2016/05/TakWebRules.pdf)**.
 
-How to play Me
+How to play aginst the AI
 --------------
 1. Go to [PlayTak.com](https://www.playtak.com/).
 2. Click **Login/Signup**
