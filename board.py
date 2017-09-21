@@ -35,7 +35,7 @@ class TakBoard():
 		self.max_height = 64
 		self.board = [[[] for x in range(self.board_size)] for x in range(self.board_size)]
 
-		self.encode = {"w": 1, "b": 2, "sw": 3, "sb": 4, "ww": 3, "wb": 4, "cw": 5, "cb": 6}
+		self.encode = {"w": 1, "b": 2, "sw": 3, "sb": 4, "cw": 5, "cb": 6}
 
 	def get_current_string_board(self):
 		return self.board
@@ -48,7 +48,8 @@ class TakBoard():
 			for col_index, cols in enumerate(rows):
 				cell = []
 				for height in cols:
-					cell.append(encode[height.lower()])
+					cell.append(self.encode[height.lower()])
+
 				
 				cell = np.pad(np.array(cell, dtype=int), (0, self.max_height - len(cell)), 'constant')
 				row_array.append(cell)
@@ -262,12 +263,12 @@ class TakBoard():
 						#print("Change in the elements at the index x:{}, y:{}".format(x, y))
 						#print("MoveCell: {}".format(move_cell))
 						#print("Cell: {}".format(cell))
-						changes.append({'x':x,'y':y, "move_cell": move_cell, "cell": cell})
+						changes.append({'x':x,'y':y, "move_cell": move_cell, "cell": cell, "index": self.get_index_from_int(x,y), "diff": len(cell) - len(move_cell)})
 				else:
 					#print("Change in number of elements at index x:{}, y:{}".format(x, y))
 					#print("MoveCell: {}".format(move_cell))
 					#print("Cell: {}".format(cell))
-					changes.append({'x':x,'y':y, "move_cell": move_cell, "cell": cell})
+					changes.append({'x':x,'y':y, "move_cell": move_cell, "cell": cell, "index": self.get_index_from_int(x,y), "diff": len(cell) - len(move_cell)})
 		return changes
 
 

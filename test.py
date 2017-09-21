@@ -5,55 +5,60 @@ np.set_printoptions(threshold=np.nan)
 
 if __name__ == '__main__':
 	test = TakBoard(5)
-	test2 = TakBoard(5)
 	before = None
 	after = None
 
 	with h5py.File(os.path.join(os.getcwd(), "ptn", "White_train_rot0_part0.h5"), 'r') as hf:
-		#37 move
-		#54
-		before = hf["x_train"][:][37]
-		after = hf["y_train"][:][37]
+		# complex move 15,34,65,67,90,171,173,181
+		# move
+		# place
+		before = hf["x_train"][:]
+		after = hf["y_train"][:]
 
-	white_move=True
+		for x, _ in enumerate(before):
 
+			white_move=True
 
-	#print(before)
-	#print(after)
+			test.set_np_game_board(before[x], white_move)
 
-	test.set_np_game_board(before, white_move)
+			changes = test.get_move_from_new_board(after[x])
 
-	#for x in test.get_current_string_board():
-	#	print(x)
+			#Place 
+			if len(changes) == 1:
+				change = changes[0]
 
-	test2.set_np_game_board(after, not white_move)
-	changes = test.get_move_from_new_board(after)
+				if len(change["move_cell"]) == 1:
+					test.place("", change["index"])
+				else:
+					test.place(change["move_cell"][0], change["index"])
 
-	#for x in test2.get_current_string_board():
-	#	print(x)
+				print("[Place] {} {}".format(change["move_cell"][0], change["index"]))
+			else:
+				#Move
+				movement_array = [row for row in changes]
 
-	print(changes)
+				start = ""
+				end = ""
 
-	if len(changes) >= 2:
-		print()
+				reverse = False
 
+				for index, change in enumerate(changes):
+					if change["diff"] > 0:
+						#print("Start is " + change["index"])
 
-	#Place 
-	if len(changes) == 1:
-		change = changes[0]
-		out = test.get_index_from_int(change['x'],change['y'])
-		print(out)
+						start = change["index"]
+						movement_array.pop(index)
 
-		if len(change["move_cell"]) == 1:
-			test.place("", out)
-		else:
-			test.place(change["move_cell"][0], out)
-	else:
-		#Move
-		index_list = []
+						if index == 0:
+							movement_array = movement_array[::-1] 
+							end = changes[-1]["index"]
+						else:
+							end = changes[0]["index"]
+							#print(changes[0])
+						break
 
-		for change in changes:
-			out = test.get_index_from_int(change['x'],change['y'])
-			index_list.append(out)
+				count_array = []
+				for elem in movement_array:
+					count_array.append(elem["diff"] * -1)
 
-		print(index_list)
+				print("[Move]  Start: {}, End: {}, Array: {}".format(start, end, count_array))

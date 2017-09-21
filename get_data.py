@@ -14,7 +14,10 @@ class PlayTak(object):
 			self.download_sqllite()
 		self.connection = sqlite3.connect(os.path.join(os.getcwd(), "ptn", "games_anon.db"))
 		self.cursor = self.connection.cursor()
+		#White Win
+		#self.cursor.execute("""SELECT * FROM games WHERE games.result == "R-0" and games.size = 5 """)
 
+		#Black Win
 		self.cursor.execute("""SELECT * FROM games WHERE games.result == "0-R" and games.size = 5 """)
 		self.notation_array = self.cursor.fetchall() 
 
@@ -54,7 +57,7 @@ class PlayTak(object):
 			#Move Board
 			try:
 				if move["movetype"] == 'p':
-					game.place(move["piece"], move["placement"], is_white)
+					game.place(move["piece"], move["placement"])
 				elif move["movetype"] == 'm':
 					game.move(move["start"], move["end"], move["order"])
 				else:

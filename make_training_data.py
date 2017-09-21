@@ -2,6 +2,8 @@ import pickle, os, zipfile, random, math
 import h5py
 import numpy as np
 
+np.set_printoptions(threshold=np.nan)
+
 class gen_Tak(object):
 	"""docstring for Tak_Train"""
 	def __init__(self):
@@ -106,6 +108,10 @@ class gen_Tak(object):
 		if is_white and total_moves % 2 == 1:
 			#Win by bad play on Black
 			return ([], [])
+
+		if not is_white and total_moves % 2 == 0:
+			#Win by bad play on Black
+			return ([], [])
 		
 		for move_index, game_state in enumerate(tak_game_states):
 
@@ -124,7 +130,6 @@ class gen_Tak(object):
 
 
 			#Update
-
 			is_white_move = not is_white_move
 
 		return (np.array(x_data), np.array(y_data))
@@ -134,5 +139,5 @@ if __name__ == '__main__':
 	
 	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
 	white_train_files = [filename for filename in training_files if filename.startswith("White_Win_size_5_rot")]
-
-	test.generate_training_data(white_train_files[3], 3)
+	white_train_files = sorted(white_train_files)
+	test.generate_training_data(white_train_files[2], 2)
