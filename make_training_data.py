@@ -140,4 +140,4 @@ if __name__ == '__main__':
 	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
 	white_train_files = [filename for filename in training_files if filename.startswith("White_Win_size_5_rot")]
 	white_train_files = sorted(white_train_files)
-	test.generate_training_data(white_train_files[2], 2)
+	test.generate_training_data(white_train_files[6], 6)

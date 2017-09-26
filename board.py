@@ -269,7 +269,51 @@ class TakBoard():
 					#print("MoveCell: {}".format(move_cell))
 					#print("Cell: {}".format(cell))
 					changes.append({'x':x,'y':y, "move_cell": move_cell, "cell": cell, "index": self.get_index_from_int(x,y), "diff": len(cell) - len(move_cell)})
-		return changes
+		
+		#Place 
+		print(changes)
+		if len(changes) == 1:
+			change = changes[0]
+
+			if len(change["move_cell"]) == 1:
+				print("[Place] {} {}".format("", change["index"]))
+				self.place("", change["index"])
+			else:
+				print("[Place] {} {}".format(change["move_cell"][0], change["index"]))
+				self.place(change["move_cell"][0], change["index"])
+
+			
+		else:
+			#Move
+			movement_array = [row for row in changes]
+
+			start = ""
+			end = ""
+
+			reverse = False
+
+			for index, change in enumerate(changes):
+				if change["diff"] > 0:
+					#print("Start is " + change["index"])
+
+					start = change["index"]
+					movement_array.pop(index)
+
+					if index == 0:
+						movement_array = movement_array[::-1] 
+						end = changes[-1]["index"]
+					else:
+						end = changes[0]["index"]
+						#print(changes[0])
+					break
+
+			count_array = []
+			for elem in movement_array:
+				count_array.append(elem["diff"])
+
+			
+			print("[Move]  Start: {}, End: {}, Array: {}".format(start, end, count_array))
+			self.move(start, end, count_array)
 
 
 if __name__ == '__main__':

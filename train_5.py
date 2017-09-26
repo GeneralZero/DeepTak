@@ -1,7 +1,7 @@
 import keras
 import numpy as np
 
-from keras.models import Sequential
+from keras.models import Sequential, model_from_json
 from keras.layers.normalization import BatchNormalization
 from keras.layers.recurrent import LSTM
 from keras.layers.core import Activation, Reshape, Dense
@@ -9,7 +9,6 @@ from keras.layers.pooling import MaxPooling1D
 from keras.layers.convolutional import Conv2D
 from keras.callbacks import ModelCheckpoint, ProgbarLogger
 
-from matplotlib import pyplot
 import os, random
 import h5py
 
@@ -18,10 +17,10 @@ class Tak_Train(object):
 	def __init__(self):
 		self.tak_size = 5
 		self.tak_height = 64
-		self.hidden_units = 625
+		self.hidden_units = 2048
 		self.train_batch_size = 100
 		self.validate_batch_size = 30
-		self.epochs = 1000
+		self.epochs = 90
 		self.dropout_rate = 0.3
 
 		self.opt = keras.optimizers.Nadam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004)
@@ -35,22 +34,23 @@ class Tak_Train(object):
 		self.model.add(LSTM(self.hidden_units, return_sequences=True, input_shape=(self.tak_size * self.tak_size, self.tak_height)))
 		self.model.add(BatchNormalization())
 
-		self.model.add(LSTM(self.hidden_units, return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
+		self.model.add(LSTM(self.hidden_units, return_sequences=True))
 		self.model.add(BatchNormalization())
 
-		self.model.add(LSTM(self.hidden_units, return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
+		self.model.add(LSTM(self.hidden_units, return_sequences=True))
 		self.model.add(BatchNormalization())
 
-		self.model.add(LSTM(self.hidden_units, return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
+		#self.model.add(LSTM(self.hidden_units, return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
+		self.model.add(LSTM(self.hidden_units, return_sequences=True))
 		self.model.add(BatchNormalization())
 
-		self.model.add(LSTM(self.hidden_units, return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
+		self.model.add(LSTM(self.hidden_units, return_sequences=True))
 		self.model.add(BatchNormalization())
 
-		self.model.add(LSTM(self.hidden_units, return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
+		self.model.add(LSTM(self.hidden_units, return_sequences=True))
 		self.model.add(BatchNormalization())
 
-		self.model.add(LSTM(self.hidden_units, return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
+		self.model.add(LSTM(self.hidden_units, return_sequences=True))
 		self.model.add(BatchNormalization())
 
 		self.model.add(Dense(self.tak_height, activation='relu'))
@@ -136,7 +136,7 @@ class Tak_Train(object):
 
 		self.weights_save = "7-COMB"
 		self.load_weights()
-		self.model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
+		self.model.compile(loss='mean_squared_error', optimizer=self.opt, metrics=['accuracy'])
 
 		self.model.summary()
 
@@ -228,7 +228,7 @@ class Tak_Train(object):
 					#Set Return Values
 					if left_overs == True:
 						all_x_train = np.concatenate((all_x_train, x_train[start_index:end_index]), axis=0)
-						all_y_train = np.concatenate((all_y_train, x_train[start_index:end_index]), axis=0)
+						all_y_train = np.concatenate((all_y_train, y_train[start_index:end_index]), axis=0)
 						left_overs = False
 
 					else:
@@ -242,25 +242,32 @@ class Tak_Train(object):
 				#Check for leftover data and add to all_trains
 				if array_size > end_index:
 					all_x_train = x_train[end_index:array_size]
-					all_y_train = x_train[end_index:array_size]
+					all_y_train = y_train[end_index:array_size]
 					left_over_size = array_size - end_index
 					left_overs = True
 
+	def predict(self, x):
+		x_pred = np.array([x])
+		print(x_pred.shape)
+		ret = self.model.predict(x_pred)
+		print(ret.shape)
+		return ret[0]
+
 	def train_generator(self, training_generator, validation_generator):
 		#Make generator to return data from training file
-		callback1 = ModelCheckpoint(os.path.join(os.getcwd(), self.weights_save, "White-weights-improvement-{epoch:02d}-{val_acc:.2f}.hdf5"), monitor='val_acc', verbose=2, save_best_only=True, mode='max')
+		callback1 = ModelCheckpoint(os.path.join(os.getcwd(), self.weights_save, "White-weights-improvement-{val_acc:.4f}.hdf5"), monitor='val_acc', verbose=2, save_best_only=True, mode='max')
 		#callback2 = keras.callbacks.TensorBoard(log_dir=os.path.join(os.getcwd(), self.weights_save), histogram_freq=0, write_graph=True, write_images=True)
 
 		history = self.model.fit_generator(training_generator, self.train_batch_size, epochs=self.epochs, callbacks=[callback1], validation_data=validation_generator, validation_steps=self.validate_batch_size, verbose=1)
-		pyplot.plot(history.history['loss'])
+		#pyplot.plot(history.history['loss'])
 		#pyplot.plot(history.history['acc'])
 		#pyplot.plot(history.history['val_acc'])
-		pyplot.plot(history.history['val_loss'])
-		pyplot.title('model train vs validation loss')
-		pyplot.ylabel('loss')
-		pyplot.xlabel('epoch')
-		pyplot.legend(['loss', 'val_loss'], loc='upper right')
-		pyplot.savefig(os.path.join(os.getcwd(), self.weights_save, "loss.png"), bbox_inches='tight')
+		#pyplot.plot(history.history['val_loss'])
+		#pyplot.title('model train vs validation loss')
+		#pyplot.ylabel('loss')
+		#pyplot.xlabel('epoch')
+		#pyplot.legend(['loss', 'val_loss'], loc='upper right')
+		#pyplot.savefig(os.path.join(os.getcwd(), self.weights_save, "loss.png"), bbox_inches='tight')
 
 
 	def count_inputs(self, hd5f_files):
@@ -272,14 +279,14 @@ class Tak_Train(object):
 
 		return count
 
-	def validate_all(self, validate_generator, files):
-		self.count_inputs()
-		training_files_generator
+	def validate_all(self, validate_generator, count):
+		steps = self.train_batch_size // count
 		score = self.model.evaluate_generator(validate_generator, steps)
-		print("Validation (Accuracy) = {}".format(score[1]))
+		#print("Validation (Accuracy) = {}".format(score))
+		return score
 
 
-if __name__ == '__main__':
+def main():
 	test = Tak_Train()
 
 	test.define_LSTM_model()
@@ -302,4 +309,33 @@ if __name__ == '__main__':
 
 	count = test.count_inputs(white_train_files)
 
-	test.validate_all(validate_all, count)
+	test.model.compile
+
+	test.validate_all(validation_all, 200)	
+
+def validate():
+	test = Tak_Train()
+
+	test.define_LSTM_model()
+	print("Loaded model")
+
+	# load weights into new model
+	#test.model.load_weights(os.path.join("7-LSTM","White-weights-improvement-64-0.99.hdf5"))
+	#print("Loaded model from disk")
+
+	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
+	white_train_files = [filename for filename in training_files if filename.startswith("White_train")]
+	random.shuffle(white_train_files)
+
+	count = test.count_inputs(white_train_files)
+
+	validation_all = test.training_files_generator(white_train_files)
+
+	print(count // test.train_batch_size)
+
+	score = test.evaluate_generator(validation_all, 10)
+	print("Validation (Accuracy) = {}".format(score[1]))
+
+if __name__ == '__main__':
+	#validate()
+	main()
