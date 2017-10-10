@@ -1,0 +1,81 @@
+Fix generation Generate
+
+Multable array []
+
+Index1: play
+	1: Place
+	2: Move
+
+Place
+	Index2: (Type)
+		1: flat
+		2: standing
+		3: capstone
+
+	Index3: (Color)
+		1: Black
+		2: White
+
+	Index4: (X loc)
+		1: 1
+		2: 2
+		3: 3
+		4: 4
+		5: 5
+
+	Index5: (Y Loc)
+		1: A
+		2: B
+		3: C
+		4: D
+		5: E
+
+Move
+	
+	Index6: (Start x)
+		1: 1
+		2: 2
+		3: 3
+		4: 4
+		5: 5
+
+	Index7: (Start y)
+		1: A
+		2: B
+		3: C
+		4: D
+		5: E
+
+	Index8: (Direction)
+		1: Up
+		2: Right
+		3: Down
+		4: Left
+
+	Index9: (Number to place 1)
+		1: 1
+		2: 2
+		3: 3
+		4: 4
+		5: 5
+
+	Index10: (Number to place 2)
+		1: 1
+		2: 2
+		3: 3
+		4: 4
+		5: 5
+
+	Index11: (Number to place 3)
+		1: 1
+		2: 2
+		3: 3
+		4: 4
+		5: 5
+
+	Index12: (Number to place 4)
+		1: 1
+		2: 2
+		3: 3
+		4: 4
+		5: 5
