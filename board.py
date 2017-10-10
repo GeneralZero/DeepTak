@@ -35,7 +35,7 @@ class TakBoard():
 		self.max_height = 64
 		self.board = [[[] for x in range(self.board_size)] for x in range(self.board_size)]
 
-		self.encode = {"w": 1, "b": 2, "sw": 3, "sb": 4, "cw": 5, "cb": 6}
+		self.encode = {"w": 1.0, "b": 2.0, "sw": 3.0, "sb": 4.0, "cw": 5.0, "cb": 6.0}
 
 	def get_current_string_board(self):
 		return self.board
