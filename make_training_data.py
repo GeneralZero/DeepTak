@@ -2,6 +2,8 @@ import pickle, os, zipfile, random, math
 import h5py
 import numpy as np
 
+from board import TakBoard
+
 np.set_printoptions(threshold=np.nan)
 
 class gen_Tak(object):
@@ -56,7 +58,7 @@ class gen_Tak(object):
 			#print(white_tak_games.shape)
 			#print("Finish Reading File")
 
-			(white_x_train, white_y_train) = self.game_to_training_data(white_tak_games, index, is_white=True)
+			(white_x_train, white_y_train) = self.game_to_training_move(white_tak_games, index, is_white=True)
 			#print(white_x_train.shape)
 			#print(white_y_train.shape)
 
@@ -93,7 +95,50 @@ class gen_Tak(object):
 		print(all_x_train.shape)
 		print(all_y_train.shape)
 
+	def game_to_training_move(self, tak_game_states, game_index, is_white=True):
+		x_data = []
+		y_data = []
 
+		#Start Game
+		is_white_move = True
+		game_obj = TakBoard(5)
+
+		total_moves = len(tak_game_states)
+		#print(total_moves)
+
+		if is_white and total_moves % 2 == 1:
+			#Win by bad play on Black
+			return ([], [])
+
+		if not is_white and total_moves % 2 == 0:
+			#Win by bad play on Black
+			return ([], [])
+		
+		for move_index, game_state in enumerate(tak_game_states):
+
+			if is_white == is_white_move:
+				#Is Black and is black move or is white and is white move
+				#Pre_move
+				x_data.append(np.array(game_state, dtype=int))
+
+				game_obj.set_np_game_board(game_state, is_white)
+			else:
+				#Is black and is white move or is white and is black move
+				#Post_move
+				if move_index == 0:
+					##Skip empty board for black
+					pass
+				#print("Diff{}  ".format(move_index), len(game_state))
+				turn = game_obj.get_result_from_new_board(game_state)
+
+				#print("Turn data {}".format(turn))
+
+				y_data.append(np.array(turn, dtype=int))
+
+			#Update
+			is_white_move = not is_white_move
+
+		return (np.array(x_data), np.array(y_data))
 
 	def game_to_training_data(self, tak_game_states, game_index, is_white=True):
 		x_data = []
@@ -140,4 +185,4 @@ if __name__ == '__main__':
 	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
 	white_train_files = [filename for filename in training_files if filename.startswith("White_Win_size_5_rot")]
 	white_train_files = sorted(white_train_files)
-	test.generate_training_data(white_train_files[6], 6)
+	test.generate_training_data(white_train_files[3], 3)

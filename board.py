@@ -248,6 +248,84 @@ class TakBoard():
 
 		self.move_number = count
 
+	def convert_piece_to_result(self, piece):
+		return int(self.encode[piece])
+
+	def get_x_y_from_grid(self, location):
+		#X is A-E
+		#Y is 1-5
+		y = int(location[1:])
+		x = (ord(location[0].lower()) - ord('a') )
+		return [x,y]
+
+	def convert_move_to_result(self, move):
+		out = [0,0,0,0,0,0,0,0,0,0,0,0]
+
+		if move["movetype"] == "p":
+			#Move Type
+			out[0] = 1
+
+			#Piece
+			out[1] = self.convert_piece_to_result(move["piece"])
+
+			temp_move = self.get_x_y_from_grid(move["placement"])
+
+			#X,Y placement
+			out[2] = temp_move[0]
+			out[3] = temp_move[1]
+
+
+		elif move["movetype"] == "m":
+			#Move Type
+			out[0] = 2
+
+			temp_move = self.get_x_y_from_grid(move["start"])
+
+			#X,Y Start stack
+			out[4] = temp_move[0]
+			out[5] = temp_move[1]
+
+			#Direction
+			out[6] = self.get_direction_from_start_end(move["start"], move["end"])
+
+			#Number of pieces
+			for x in range(len(move["order"])):
+				out[7+x] = move["order"][x]
+
+		else:
+			raise Exception("Invalid Move Type Result")
+
+		return out
+
+	def get_result_from_new_board(self, move_board):
+		changes = self.get_move_from_new_board(move_board)
+
+		return self.convert_move_to_result(changes)
+
+	def get_direction_from_start_end(self, start, end):
+		size = 5
+
+		#direction lowest is bottom left
+		start_int = size * int(start[1:]) + (ord('a') - ord(start[0].lower()))
+		end_int = size * int(end[1:]) + (ord('a') - ord(end[0].lower())) 
+
+		if start_int > end_int:
+			# Move Down or Left
+			if end_int > start_int - size:
+				#Move Down
+				return 3
+			else:
+				#Move Left
+				return 4
+		else:
+			#Move Up or Right
+			if end_int >= start_int + size:
+				#Move Up
+				return 1
+			else:
+				#Move Right
+				return 2
+
 	def get_move_from_new_board(self, move_board):
 		changes = []
 		#Get Rows
@@ -271,16 +349,19 @@ class TakBoard():
 					changes.append({'x':x,'y':y, "move_cell": move_cell, "cell": cell, "index": self.get_index_from_int(x,y), "diff": len(cell) - len(move_cell)})
 		
 		#Place 
-		print(changes)
+		#print(changes)
 		if len(changes) == 1:
 			change = changes[0]
 
 			if len(change["move_cell"]) == 1:
-				print("[Place] {} {}".format("", change["index"]))
+				#print("[Place] {} {}".format("", change["index"]))
 				self.place("", change["index"])
+
 			else:
-				print("[Place] {} {}".format(change["move_cell"][0], change["index"]))
+				#print("[Place] {} {}".format(change["move_cell"][0], change["index"]))
 				self.place(change["move_cell"][0], change["index"])
+
+			return {"movetype": "p", "piece": change["move_cell"][0], "placement":change["index"]}
 
 			
 		else:
@@ -309,11 +390,13 @@ class TakBoard():
 
 			count_array = []
 			for elem in movement_array:
-				count_array.append(elem["diff"])
+				count_array.append(abs(elem["diff"]))
 
 			
-			print("[Move]  Start: {}, End: {}, Array: {}".format(start, end, count_array))
+			#print("[Move]  Start: {}, End: {}, Array: {}".format(start, end, count_array))
 			self.move(start, end, count_array)
+
+			return {"movetype": "m", "start": start, "end": end, "order": count_array}
 
 
 if __name__ == '__main__':
