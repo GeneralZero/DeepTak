@@ -2,7 +2,7 @@ import sqlite3, os.path, requests, datetime, re, pickle, traceback
 import h5py
 import numpy as np
 from board import TakBoard
-import zipfile
+import zipfile, multiprocessing
 
 
 class PlayTak(object):
@@ -86,19 +86,18 @@ class PlayTak(object):
 			with open(os.path.join(os.getcwd(), "ptn", "games_anon.db"), 'wb') as f:
 				f.write(r.content)	
 	
-	def get_all_games_h5(self):
-		for transformation in [7]:
-			with h5py.File(os.path.join(os.getcwd(), "ptn", "Black_Win_size_5_rot_{}.h5".format(transformation)), "w") as hf:
-				for index, game in enumerate(self.notation_array):
-					all_boards = self.sql_to_numpy(game)
-					if type(all_boards) == list:
-						#print(len(all_boards), type(all_boards))
-						print("Write file gamedata_{} for Transformation {}".format(index, transformation))
-						hf.create_dataset("gamedata_{}".format(index), data=all_boards, compression="gzip", compression_opts=9)
-					else:
-						pass
-						#print("Error with gamedata_{}.pickle for Transformation {}".format(index, transformation))
-						#print("Null Error")
+	def get_all_games_h5(self, transformation=0):
+		with h5py.File(os.path.join(os.getcwd(), "ptn", "Black_Win_size_5_rot_{}.h5".format(transformation)), "w") as hf:
+			for index, game in enumerate(self.notation_array):
+				all_boards = self.sql_to_numpy(game)
+				if type(all_boards) == list:
+					#print(len(all_boards), type(all_boards))
+					print("Write file gamedata_{} for Transformation {}".format(index, transformation))
+					hf.create_dataset("gamedata_{}".format(index), data=all_boards, compression="gzip", compression_opts=9)
+				else:
+					pass
+					#print("Error with gamedata_{}.pickle for Transformation {}".format(index, transformation))
+					#print("Null Error")
 
 	def get_all_games_ptn(self):
 		for transformation in [0,1,2,3,4,5,6,7]:
@@ -311,15 +310,16 @@ class PlayTak(object):
 			process = subprocess.Popen([exe, "-move", move, "-white", ptn_file])
 
 		print(process.communicate())
-
-
 			
 if __name__ == '__main__':
 	#download/load file
-	b = PlayTak()
+	jobs = []
+	for i in range(8):
+		b = PlayTak()
 
-	#Save Game data
-	all_games = b.get_all_games_h5()
+		p = multiprocessing.Process(target=b.get_all_games_h5, args=(i,))
+		jobs.append(p)
+		p.start()
 
-	#Save Game data to PTN
-	#all_games = b.get_all_games_ptn()
+		#Save Game data to PTN
+		#all_games = b.get_all_games_ptn()
