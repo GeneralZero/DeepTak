@@ -51,7 +51,7 @@ class TakBoard():
 					cell.append(self.encode[height.lower()])
 
 				#Top is lowest index
-				cell = reversed(cell)
+				cell = cell[::-1]
 				cell = np.pad(np.array(cell, dtype=int), (0, self.max_height - len(cell)), 'constant')
 				row_array.append(cell)
 			board_array.append(row_array)

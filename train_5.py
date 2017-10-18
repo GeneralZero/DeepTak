@@ -10,7 +10,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.recurrent import LSTM
 from keras.layers.core import Activation, Reshape, Dense, Flatten
 from keras.layers.pooling import MaxPooling1D
-from keras.layers.convolutional import Conv2D, Conv1D
+from keras.layers.convolutional import Conv2D, Conv1D, UpSampling2D
 from keras.callbacks import ModelCheckpoint, ProgbarLogger
 
 import os, random
@@ -48,9 +48,10 @@ class Tak_Train(object):
 		self.tak_size = 5
 		self.tak_height = 64
 		self.hidden_units = 1500
+		self.number_of_samples = 100
 		self.train_batch_size = 100
-		self.validate_batch_size = 50
-		self.epochs = 90
+		self.validate_batch_size = 30
+		self.epochs = 100
 		self.dropout_rate = 0.1
 
 		self.opt = keras.optimizers.Nadam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004)
@@ -70,18 +71,29 @@ class Tak_Train(object):
 			print("Loading previous weights file " + training_files[-1])
 			self.model.load_weights(os.path.join(os.getcwd(), self.weights_save, training_files[-1]))
 
-	def define_Comb_model(self):
+	def define_Conv2_model(self):
 		print("Setup Model")
 		self.model = Sequential()
-		self.model.add(Conv2D(2000, (3, 3), activation='relu', input_shape=(self.tak_size, self.tak_size, self.tak_height)))
+
+		self.model.add(UpSampling2D(5, data_format='channels_last', input_shape=(self.tak_size, self.tak_size, self.tak_height)))
+		self.model.add(Conv2D(2000, 15, activation='relu'))
+		self.model.add(BatchNormalization())
+
+		self.model.add(Conv2D(1000, 5, activation='relu'))
+		self.model.add(BatchNormalization())
+
+		self.model.add(Conv2D(500, 5, activation='relu'))
+		self.model.add(BatchNormalization())
+
+		self.model.add(Conv2D(100, 2, activation='relu'))
 		self.model.add(BatchNormalization())
 
 		self.model.add(Flatten())
 		self.model.add(Dense(12, activation='relu'))
 		#
-		self.weights_save = "7-COMB"
+		self.weights_save = "2-CONV"
 		self.load_weights()
-		self.model.compile(loss='mean_squared_error', optimizer=self.opt, metrics=['accuracy', move_accuracy_validate])
+		self.model.compile(loss='mean_squared_error', optimizer=self.opt, metrics=[move_accuracy_validate])
 		self.model.summary()
 
 	def define_Conv_model(self):
@@ -143,13 +155,13 @@ class Tak_Train(object):
 				start_index = 0
 				end_index = 0
 
-				while (end_index + self.train_batch_size) < array_size:
+				while (end_index + self.number_of_samples) < array_size:
 					#Update indexes
 					start_index = end_index
-					end_index = start_index + self.train_batch_size - left_over_size
+					end_index = start_index + self.number_of_samples - left_over_size
 					left_over_size = 0
 
-					#print("Start_index: {}, End_index: {}, Array_size: {}".format(start_index, start_index + self.train_batch_size, array_size))
+					#print("Start_index: {}, End_index: {}, Array_size: {}".format(start_index, start_index + self.number_of_samples, array_size))
 
 					#Set Return Values
 					if left_overs == True:
@@ -181,7 +193,7 @@ class Tak_Train(object):
 
 	def train_generator(self, training_generator, validation_generator):
 		#Make generator to return data from training file
-		callback1 = ModelCheckpoint(os.path.join(os.getcwd(), self.weights_save, "White-weights-improvement-{move_accuracy_validate:.3f}.hdf5"), monitor='move_accuracy_validate', verbose=2, save_best_only=True, mode='max')
+		callback1 = ModelCheckpoint(os.path.join(os.getcwd(), self.weights_save, "White-weights-improvement-{val_move_accuracy_validate:.3f}.hdf5"), monitor='val_move_accuracy_validate', verbose=2, save_best_only=True, mode='max')
 		#callback2 = keras.callbacks.TensorBoard(log_dir=os.path.join(os.getcwd(), self.weights_save), histogram_freq=0, write_graph=True, write_images=True)
 
 		history = self.model.fit_generator(training_generator, self.train_batch_size, epochs=self.epochs, callbacks=[callback1], validation_data=validation_generator, validation_steps=self.validate_batch_size, verbose=1)
@@ -216,20 +228,21 @@ def main():
 	test = Tak_Train()
 
 	#test.define_LSTM_model(False)
-	#test.define_Comb_model()
-	test.define_Conv_model()
+	test.define_Conv2_model()
+	pass
+	#test.define_Conv_model()
 
 	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
 	white_train_files = [filename for filename in training_files if filename.startswith("White_train")]
 	random.shuffle(white_train_files)
 	
-	#count = test.count_inputs(white_train_files[:-5])
+	#count1 = test.count_inputs(white_train_files[:-3])
 	#print("Training on {} inputs".format(count))
-	training_generator = test.training_files_generator(white_train_files[:-5])
+	training_generator = test.training_files_generator(white_train_files[:-3])
 
-	#count = test.count_inputs(white_train_files[-5:])
+	#count2 = test.count_inputs(white_train_files[-3:])
 	#print("Validation on {} inputs".format(count))
-	validation_generator = test.training_files_generator(white_train_files[-5:])
+	validation_generator = test.training_files_generator(white_train_files[-3:])
 
 	test.train_generator(training_generator, validation_generator)
 
