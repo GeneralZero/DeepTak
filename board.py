@@ -235,7 +235,7 @@ class TakBoard():
 					out_list.append(key)
 					break
 
-		return reversed(out_list)
+		return out_list[::-1]
 
 	def set_np_game_board(self, move_board, player1_turn):
 		self.player1_turn = player1_turn
