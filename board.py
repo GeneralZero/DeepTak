@@ -50,7 +50,8 @@ class TakBoard():
 				for height in cols:
 					cell.append(self.encode[height.lower()])
 
-				
+				#Top is lowest index
+				cell = reversed(cell)
 				cell = np.pad(np.array(cell, dtype=int), (0, self.max_height - len(cell)), 'constant')
 				row_array.append(cell)
 			board_array.append(row_array)
@@ -234,7 +235,7 @@ class TakBoard():
 					out_list.append(key)
 					break
 
-		return out_list
+		return reversed(out_list)
 
 	def set_np_game_board(self, move_board, player1_turn):
 		self.player1_turn = player1_turn
