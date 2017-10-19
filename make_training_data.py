@@ -1,4 +1,4 @@
-import pickle, os, zipfile, random, math
+import pickle, os, zipfile, random, math, multiprocessing
 import h5py
 import numpy as np
 
@@ -180,9 +180,15 @@ class gen_Tak(object):
 		return (np.array(x_data), np.array(y_data))
 
 if __name__ == '__main__':
-	test = gen_Tak()
-	
 	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
 	white_train_files = [filename for filename in training_files if filename.startswith("White_Win_size_5_rot")]
 	white_train_files = sorted(white_train_files)
-	test.generate_training_data(white_train_files[3], 3)
+
+	jobs = []
+	for i in range(8):
+		test = gen_Tak()
+
+		p = multiprocessing.Process(target=test.generate_training_data, args=(white_train_files[i], i,))
+		jobs.append(p)
+		p.start()
+		
