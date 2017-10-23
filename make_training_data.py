@@ -91,6 +91,9 @@ class gen_Tak(object):
 
 		print("Saving data to White_train_rot{}_part{}.h5".format(part,i))
 
+		all_x_train = np.array(all_x_train)
+		all_y_train = np.array(all_y_train)
+
 		with h5py.File(os.path.join(os.getcwd(), "ptn", "White_train_rot{}_part{}.h5".format(part,i)), "w") as hf:
 			hf.create_dataset("x_train", data=all_x_train, compression="gzip", compression_opts=9)
 			hf.create_dataset("y_train", data=all_y_train, compression="gzip", compression_opts=9)

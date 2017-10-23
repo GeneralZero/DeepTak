@@ -76,22 +76,13 @@ class Tak_Train(object):
 		self.model = Sequential()
 
 		self.model.add(UpSampling2D(5, data_format='channels_last', input_shape=(self.tak_size, self.tak_size, self.tak_height)))
-		self.model.add(Conv2D(2000, 15, activation='relu'))
-		self.model.add(BatchNormalization())
-
-		self.model.add(Conv2D(1000, 5, activation='relu'))
-		self.model.add(BatchNormalization())
-
-		self.model.add(Conv2D(500, 5, activation='relu'))
-		self.model.add(BatchNormalization())
-
-		self.model.add(Conv2D(100, 2, activation='relu'))
+		self.model.add(Conv2D(2000, 20, activation='relu'))
 		self.model.add(BatchNormalization())
 
 		self.model.add(Flatten())
 		self.model.add(Dense(12, activation='relu'))
 		#
-		self.weights_save = "2-CONV"
+		self.weights_save = "3-CONV"
 		self.load_weights()
 		self.model.compile(loss='mean_squared_error', optimizer=self.opt, metrics=[move_accuracy_validate])
 		self.model.summary()
@@ -281,3 +272,4 @@ if __name__ == '__main__':
 	#validate()
 	for _ in range(5):
 		main()
+
