@@ -1,4 +1,4 @@
-import pickle, os, zipfile, random, math
+import pickle, os, zipfile, random, math, multiprocessing
 import h5py
 import numpy as np
 
@@ -45,8 +45,8 @@ class gen_Tak(object):
 	def generate_training_data(self, file_name, part):
 		print("Generating Training Data")
 
-		all_x_train = None 
-		all_y_train = None
+		all_x_train = []
+		all_y_train = []
 
 		first = True
 
@@ -68,11 +68,15 @@ class gen_Tak(object):
 				first = False
 
 			elif len(white_x_train) != 0 or len(white_y_train) != 0:
-				all_x_train = np.concatenate((all_x_train, white_x_train), axis=0)
-				all_y_train = np.concatenate((all_y_train, white_y_train), axis=0)
+				all_x_train += white_x_train
+				all_y_train += white_y_train
 
 			if index % 5000 == 4999:
 				print("Finished index: {}".format(index))
+
+				all_x_train = np.array(all_x_train)
+				all_y_train = np.array(all_y_train)
+
 				print(all_x_train.shape)
 				print(all_y_train.shape)
 
@@ -86,6 +90,9 @@ class gen_Tak(object):
 				first = True
 
 		print("Saving data to White_train_rot{}_part{}.h5".format(part,i))
+
+		all_x_train = np.array(all_x_train)
+		all_y_train = np.array(all_y_train)
 
 		with h5py.File(os.path.join(os.getcwd(), "ptn", "White_train_rot{}_part{}.h5".format(part,i)), "w") as hf:
 			hf.create_dataset("x_train", data=all_x_train, compression="gzip", compression_opts=9)
@@ -138,7 +145,7 @@ class gen_Tak(object):
 			#Update
 			is_white_move = not is_white_move
 
-		return (np.array(x_data), np.array(y_data))
+		return (x_data, y_data)
 
 	def game_to_training_data(self, tak_game_states, game_index, is_white=True):
 		x_data = []
@@ -180,9 +187,15 @@ class gen_Tak(object):
 		return (np.array(x_data), np.array(y_data))
 
 if __name__ == '__main__':
-	test = gen_Tak()
-	
 	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
 	white_train_files = [filename for filename in training_files if filename.startswith("White_Win_size_5_rot")]
 	white_train_files = sorted(white_train_files)
-	test.generate_training_data(white_train_files[3], 3)
+
+	jobs = []
+	for i in range(8):
+		test = gen_Tak()
+
+		p = multiprocessing.Process(target=test.generate_training_data, args=(white_train_files[i], i,))
+		jobs.append(p)
+		p.start()
+		

@@ -32,7 +32,7 @@ class TakBoard():
 		self.move_number = 0
 		
 		self.board_size = size
-		self.max_height = 64
+		self.max_height = 44
 		self.board = [[[] for x in range(self.board_size)] for x in range(self.board_size)]
 
 		self.encode = {"w": 1.0, "b": 2.0, "sw": 3.0, "sb": 4.0, "cw": 5.0, "cb": 6.0}
@@ -50,7 +50,8 @@ class TakBoard():
 				for height in cols:
 					cell.append(self.encode[height.lower()])
 
-				
+				#Top is lowest index
+				cell = cell[::-1]
 				cell = np.pad(np.array(cell, dtype=int), (0, self.max_height - len(cell)), 'constant')
 				row_array.append(cell)
 			board_array.append(row_array)
@@ -234,7 +235,7 @@ class TakBoard():
 					out_list.append(key)
 					break
 
-		return out_list
+		return out_list[::-1]
 
 	def set_np_game_board(self, move_board, player1_turn):
 		self.player1_turn = player1_turn

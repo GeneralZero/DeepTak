@@ -4,11 +4,13 @@ import numpy as np
 from keras import backend as K
 
 from keras.models import Sequential, model_from_json
+from keras.metrics import binary_accuracy
+
 from keras.layers.normalization import BatchNormalization
 from keras.layers.recurrent import LSTM
-from keras.layers.core import Activation, Reshape, Dense
+from keras.layers.core import Activation, Reshape, Dense, Flatten
 from keras.layers.pooling import MaxPooling1D
-from keras.layers.convolutional import SeparableConv2D
+from keras.layers.convolutional import Conv2D, Conv1D, UpSampling2D
 from keras.callbacks import ModelCheckpoint, ProgbarLogger
 
 import os, random
@@ -16,82 +18,43 @@ import h5py
 
 np.set_printoptions(threshold=np.nan)
 
-def binary_accuracy(y_true, y_pred):
-	return K.mean(K.equal(y_true, K.round(y_pred)))
+def move_accuracy_validate(y_true, y_pred):
+	types = K.cast(K.equal(y_true[:,0], K.round(y_pred[:,0])), 'float32')
 
-def binary_accuracy_np(y_true, y_pred):
-	compare = np.equal(y_true.astype(int), np.round(y_pred).astype(int)).flatten().astype(int)
-	correct = np.mean(np.min(compare))
-	simular = np.mean(compare)
+	sum0 = K.mean(types)
 
-	print("correct {}".format(correct))
-	print("simular {}".format(simular))
+	place1 = K.cast(K.equal(y_true[:,1], K.round(y_pred[:,1])), 'float32')
+	place2 = K.cast(K.equal(y_true[:,2], K.round(y_pred[:,2])), 'float32')
+	place3 = K.cast(K.equal(y_true[:,3], K.round(y_pred[:,3])), 'float32')
 
-	return np.mean(np.stack([simular, simular]))
+	sum1 = K.mean(K.stack([place1, place2, place3]))
 
-def binary_accuracy_validate(y_true, y_pred):
-	correct = K.mean(K.min(K.cast(K.equal(y_true, K.round(y_pred)), 'float32')))
-	simular = K.mean(K.equal(y_true, K.round(y_pred)))
+	move1 = K.cast(K.equal(y_true[:,4], K.round(y_pred[:,4])), 'float32')
+	move2 = K.cast(K.equal(y_true[:,5], K.round(y_pred[:,5])), 'float32')
+	move3 = K.cast(K.equal(y_true[:,6], K.round(y_pred[:,6])), 'float32')
+	move4 = K.cast(K.equal(y_true[:,7], K.round(y_pred[:,7])), 'float32')
+	move5 = K.cast(K.equal(y_true[:,8], K.round(y_pred[:,8])), 'float32')
+	move6 = K.cast(K.equal(y_true[:,9], K.round(y_pred[:,9])), 'float32')
+	move7 = K.cast(K.equal(y_true[:,10], K.round(y_pred[:,10])), 'float32')
+	move8 = K.cast(K.equal(y_true[:,11], K.round(y_pred[:,11])), 'float32')
 
-	return K.mean(K.stack([correct, simular, simular]))
+	sum2 = K.mean(K.stack([move1, move2, move3, move4, move5, move6, move7, move8]))
 
-def binary_accuracy_perfect(y_true, y_pred):
-	return K.mean(K.min(K.cast(K.equal(y_true, K.round(y_pred)), 'float32')))
+	return K.mean(K.stack([sum0, sum0, sum2, sum1]))
 
 class Tak_Train(object):
 	"""docstring for Tak_Train"""
 	def __init__(self):
 		self.tak_size = 5
 		self.tak_height = 64
-		self.hidden_units = 100
+		self.hidden_units = 1500
+		self.number_of_samples = 100
 		self.train_batch_size = 100
 		self.validate_batch_size = 30
-		self.epochs = 90
+		self.epochs = 100
 		self.dropout_rate = 0.1
 
-		self.opt = keras.optimizers.Nadam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004)
-
-	def define_LSTM_model(self, validate=False):
-		print("Setup Model")
-		self.model = Sequential()
-		#self.model.add(Conv2D(self.tak_height, (1, 1), activation='relu', input_shape=(self.tak_size, self.tak_size, self.tak_height)))
-		#self.model.add(BatchNormalization())
-		self.model.add(Reshape((self.tak_size * self.tak_size, self.tak_height), input_shape=(self.tak_size, self.tak_size, self.tak_height)))
-		self.model.add(LSTM(self.hidden_units, activation='relu', return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate, input_shape=(self.tak_size * self.tak_size, self.tak_height)))
-		self.model.add(BatchNormalization())
-
-		self.model.add(LSTM(self.hidden_units, activation='relu', return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
-		self.model.add(BatchNormalization())
-
-		self.model.add(LSTM(self.hidden_units, activation='relu', return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
-		self.model.add(BatchNormalization())
-
-		self.model.add(LSTM(self.hidden_units, activation='relu', return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
-		self.model.add(BatchNormalization())
-
-		self.model.add(LSTM(self.hidden_units, activation='relu', return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
-		self.model.add(BatchNormalization())
-
-		self.model.add(LSTM(self.hidden_units, activation='relu', return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
-		self.model.add(BatchNormalization())
-
-		self.model.add(LSTM(self.hidden_units, activation='relu', return_sequences=True, dropout=self.dropout_rate, recurrent_dropout=self.dropout_rate))
-		self.model.add(BatchNormalization())
-
-		self.model.add(Dense(self.tak_height, activation='softmax'))#activation='relu'))
-		self.model.add(Reshape((self.tak_size, self.tak_size, self.tak_height), input_shape=(self.tak_size * self.tak_size, self.tak_height)))
-
-		self.weights_save = "7-LSTM"
-		#self.model.load_weights(os.path.join(os.getcwd(), self.weights_save, "White-weights-improvement-0.961.hdf5"))
-		self.load_weights()
-
-		if not validate:
-			self.model.compile(loss='mean_squared_error', optimizer=self.opt, metrics=[binary_accuracy_validate, binary_accuracy_perfect])
-		else:
-			self.model.compile(loss='mean_squared_error', optimizer=self.opt, metrics=[correct])
-			
-
-		self.model.summary()
+		self.opt = keras.optimizers.Nadam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0.004)
 
 	def load_weights(self):
 		if not os.path.exists(self.weights_save):
@@ -108,18 +71,47 @@ class Tak_Train(object):
 			print("Loading previous weights file " + training_files[-1])
 			self.model.load_weights(os.path.join(os.getcwd(), self.weights_save, training_files[-1]))
 
-	def define_Comb_model(self):
+	def define_Conv2_model(self):
 		print("Setup Model")
 		self.model = Sequential()
-		self.model.add(SeparableConv2D(20, (1, 1), activation='relu', input_shape=(self.tak_size, self.tak_size, self.tak_height)))
-		self.model.add(BatchNormalization())
-		
-		self.model.add(Dense(self.tak_height, activation='relu'))
-		#self.model.add(Reshape((self.tak_size, self.tak_size, self.tak_height), input_shape=(self.tak_size * self.tak_size, self.tak_height)))
 
-		self.weights_save = "7-COMB"
+		self.model.add(UpSampling2D(5, data_format='channels_last', input_shape=(self.tak_size, self.tak_size, self.tak_height)))
+		self.model.add(Conv2D(2000, 20, activation='relu'))
+		self.model.add(BatchNormalization())
+
+		self.model.add(Flatten())
+		self.model.add(Dense(12, activation='relu'))
+		#
+		self.weights_save = "3-CONV"
 		self.load_weights()
-		self.model.compile(loss='mean_squared_error', optimizer=self.opt, metrics=[binary_accuracy_validate, binary_accuracy_perfect])
+		self.model.compile(loss='mean_squared_error', optimizer=self.opt, metrics=[move_accuracy_validate])
+		self.model.summary()
+
+	def define_Conv_model(self):
+		print("Setup Model")
+		self.model = Sequential()
+		self.model.add(Reshape((self.tak_size * self.tak_size, self.tak_height), input_shape=(self.tak_size, self.tak_size, self.tak_height)))
+		self.model.add(Conv1D(2000, 5, activation='relu', input_shape=(self.tak_size * self.tak_size, self.tak_height)))
+		self.model.add(BatchNormalization())
+
+		self.model.add(Conv1D(1000, 5, activation='relu'))
+		self.model.add(BatchNormalization())
+
+		self.model.add(Conv1D(500, 5, activation='relu'))
+		self.model.add(BatchNormalization())
+
+		self.model.add(Conv1D(250, 5, activation='relu'))
+		self.model.add(BatchNormalization())
+
+		self.model.add(Conv1D(125, 5, activation='relu'))
+		self.model.add(BatchNormalization())
+
+		self.model.add(Flatten())
+		self.model.add(Dense(12, activation='relu'))
+		#
+		self.weights_save = "3-CONV"
+		self.load_weights()
+		self.model.compile(loss='mean_squared_error', optimizer=self.opt, metrics=[move_accuracy_validate])
 		self.model.summary()
 
 	def training_files_generator(self, file_names):
@@ -154,13 +146,13 @@ class Tak_Train(object):
 				start_index = 0
 				end_index = 0
 
-				while (end_index + self.train_batch_size) < array_size:
+				while (end_index + self.number_of_samples) < array_size:
 					#Update indexes
 					start_index = end_index
-					end_index = start_index + self.train_batch_size - left_over_size
+					end_index = start_index + self.number_of_samples - left_over_size
 					left_over_size = 0
 
-					#print("Start_index: {}, End_index: {}, Array_size: {}".format(start_index, start_index + self.train_batch_size, array_size))
+					#print("Start_index: {}, End_index: {}, Array_size: {}".format(start_index, start_index + self.number_of_samples, array_size))
 
 					#Set Return Values
 					if left_overs == True:
@@ -192,7 +184,7 @@ class Tak_Train(object):
 
 	def train_generator(self, training_generator, validation_generator):
 		#Make generator to return data from training file
-		callback1 = ModelCheckpoint(os.path.join(os.getcwd(), self.weights_save, "White-weights-improvement-{binary_accuracy_validate:.3f}.hdf5"), monitor='binary_accuracy_validate', verbose=2, save_best_only=True, mode='max')
+		callback1 = ModelCheckpoint(os.path.join(os.getcwd(), self.weights_save, "White-weights-improvement-{val_move_accuracy_validate:.3f}.hdf5"), monitor='val_move_accuracy_validate', verbose=2, save_best_only=True, mode='max')
 		#callback2 = keras.callbacks.TensorBoard(log_dir=os.path.join(os.getcwd(), self.weights_save), histogram_freq=0, write_graph=True, write_images=True)
 
 		history = self.model.fit_generator(training_generator, self.train_batch_size, epochs=self.epochs, callbacks=[callback1], validation_data=validation_generator, validation_steps=self.validate_batch_size, verbose=1)
@@ -227,19 +219,21 @@ def main():
 	test = Tak_Train()
 
 	#test.define_LSTM_model(False)
-	test.define_Comb_model()
+	test.define_Conv2_model()
+	pass
+	#test.define_Conv_model()
 
 	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
 	white_train_files = [filename for filename in training_files if filename.startswith("White_train")]
 	random.shuffle(white_train_files)
 	
-	#count = test.count_inputs(white_train_files[:-5])
+	#count1 = test.count_inputs(white_train_files[:-3])
 	#print("Training on {} inputs".format(count))
-	training_generator = test.training_files_generator(white_train_files[:-5])
+	training_generator = test.training_files_generator(white_train_files[:-3])
 
-	#count = test.count_inputs(white_train_files[-5:])
+	#count2 = test.count_inputs(white_train_files[-3:])
 	#print("Validation on {} inputs".format(count))
-	validation_generator = test.training_files_generator(white_train_files[-5:])
+	validation_generator = test.training_files_generator(white_train_files[-3:])
 
 	test.train_generator(training_generator, validation_generator)
 
@@ -274,10 +268,8 @@ def validate():
 			print("{} correct out of {}".format(fill_correct, count))
 
 
-	
-
-
 if __name__ == '__main__':
 	#validate()
 	for _ in range(5):
 		main()
+
