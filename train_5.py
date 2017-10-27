@@ -40,7 +40,7 @@ def move_accuracy_validate(y_true, y_pred):
 
 	sum2 = K.mean(K.stack([move1, move2, move3, move4, move5, move6, move7, move8]))
 
-	return K.mean(K.stack([sum0, sum0, sum2, sum1]))
+	return K.mean(K.stack([sum0, sum2, sum0, sum1]))
 
 class Tak_Train(object):
 	"""docstring for Tak_Train"""
@@ -65,49 +65,38 @@ class Tak_Train(object):
 			f.write(self.model.to_json())
 
 		#Setup Model
-		training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), self.weights_save)) if filename.endswith(".hdf5")]
-		if len(training_files) != 0:
-			training_files = sorted(training_files)
-			print("Loading previous weights file " + training_files[-1])
-			self.model.load_weights(os.path.join(os.getcwd(), self.weights_save, training_files[-1]))
+		if os.path.exists(os.path.join(os.getcwd(), self.weights_save, "best.hdf5")):
+			 self.model.load_weights(os.path.join(os.getcwd(), self.weights_save, "best.hdf5"))
+		else:
+			training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), self.weights_save)) if filename.endswith(".hdf5")]
+			if len(training_files) != 0:
+				training_files = sorted(training_files)
+				print("Loading previous weights file " + training_files[-1])
+				self.model.load_weights(os.path.join(os.getcwd(), self.weights_save, training_files[-1]))
 
 	def define_Conv2_model(self):
 		print("Setup Model")
 		self.model = Sequential()
 
-		self.model.add(UpSampling2D(5, data_format='channels_last', input_shape=(self.tak_size, self.tak_size, self.tak_height)))
-		self.model.add(Conv2D(2000, 20, activation='relu'))
-		self.model.add(BatchNormalization())
+		#self.model.add(UpSampling2D(5, data_format='channels_last', input_shape=(self.tak_size, self.tak_size, self.tak_height)))
+		self.model.add(Dense(20, input_shape=(self.tak_size, self.tak_size, 64)))
+		self.model.add(Conv2D(2000, 4, data_format='channels_last'))
+		self.model.add(Activation('relu'))
 
 		self.model.add(Flatten())
-		self.model.add(Dense(12, activation='relu'))
-		#
-		self.weights_save = "3-CONV"
-		self.load_weights()
-		self.model.compile(loss='mean_squared_error', optimizer=self.opt, metrics=[move_accuracy_validate])
-		self.model.summary()
+		self.model.add(Dense(1000))
+		self.model.add(Activation('relu'))
 
-	def define_Conv_model(self):
-		print("Setup Model")
-		self.model = Sequential()
-		self.model.add(Reshape((self.tak_size * self.tak_size, self.tak_height), input_shape=(self.tak_size, self.tak_size, self.tak_height)))
-		self.model.add(Conv1D(2000, 5, activation='relu', input_shape=(self.tak_size * self.tak_size, self.tak_height)))
-		self.model.add(BatchNormalization())
+		self.model.add(Dense(250))
+		self.model.add(Activation('relu'))
 
-		self.model.add(Conv1D(1000, 5, activation='relu'))
-		self.model.add(BatchNormalization())
+		self.model.add(Dense(75))
+		self.model.add(Activation('relu'))
 
-		self.model.add(Conv1D(500, 5, activation='relu'))
-		self.model.add(BatchNormalization())
+		self.model.add(Dense(24))
+		self.model.add(Activation('relu'))
 
-		self.model.add(Conv1D(250, 5, activation='relu'))
-		self.model.add(BatchNormalization())
-
-		self.model.add(Conv1D(125, 5, activation='relu'))
-		self.model.add(BatchNormalization())
-
-		self.model.add(Flatten())
-		self.model.add(Dense(12, activation='relu'))
+		self.model.add(Dense(12))
 		#
 		self.weights_save = "3-CONV"
 		self.load_weights()
@@ -184,7 +173,7 @@ class Tak_Train(object):
 
 	def train_generator(self, training_generator, validation_generator):
 		#Make generator to return data from training file
-		callback1 = ModelCheckpoint(os.path.join(os.getcwd(), self.weights_save, "White-weights-improvement-{val_move_accuracy_validate:.3f}.hdf5"), monitor='val_move_accuracy_validate', verbose=2, save_best_only=True, mode='max')
+		callback1 = ModelCheckpoint(os.path.join(os.getcwd(), self.weights_save, "best.hdf5"), monitor='val_move_accuracy_validate', verbose=2, save_best_only=True, mode='max')
 		#callback2 = keras.callbacks.TensorBoard(log_dir=os.path.join(os.getcwd(), self.weights_save), histogram_freq=0, write_graph=True, write_images=True)
 
 		history = self.model.fit_generator(training_generator, self.train_batch_size, epochs=self.epochs, callbacks=[callback1], validation_data=validation_generator, validation_steps=self.validate_batch_size, verbose=1)
@@ -229,11 +218,11 @@ def main():
 	
 	#count1 = test.count_inputs(white_train_files[:-3])
 	#print("Training on {} inputs".format(count))
-	training_generator = test.training_files_generator(white_train_files[:-3])
+	training_generator = test.training_files_generator(white_train_files[:-5])
 
 	#count2 = test.count_inputs(white_train_files[-3:])
 	#print("Validation on {} inputs".format(count))
-	validation_generator = test.training_files_generator(white_train_files[-3:])
+	validation_generator = test.training_files_generator(white_train_files[-5:])
 
 	test.train_generator(training_generator, validation_generator)
 
@@ -244,11 +233,11 @@ def validate():
 
 	test = Tak_Train()
 
-	test.define_LSTM_model(False)
+	test.define_Conv2_model()
 	print("Loaded model")
 
 	# load weights into new model
-	#test.model.load_weights(os.path.join("7-LSTM","White-weights-improvement-64-0.99.hdf5"))
+	test.model.load_weights(os.path.join(os.getcwd(),"3-CONV","White-weights-improvement-0.834.hdf5"))
 	#print("Loaded model from disk")
 
 	training_files = [filename for filename in os.listdir(os.path.join(os.getcwd(), "ptn")) if filename.endswith(".h5")]
@@ -260,16 +249,18 @@ def validate():
 	for x_data_array, y_data_array in validation_all:
 		for index in range(x_data_array.shape[0]):
 			#print("Array shape {}".format(x_data_array.shape))
-			valid = binary_accuracy_np(test.predict(x_data_array[index]), y_data_array[index])
-			print(valid)
-			if valid == 1:
+			valid = np.equal(test.predict(x_data_array[index]), y_data_array[index])
+			#print(valid)
+			if valid.all():
 				fill_correct += 1
 			count += 1
-			print("{} correct out of {}".format(fill_correct, count))
-
+		print("{} correct out of {}".format(fill_correct, count))
 
 if __name__ == '__main__':
-	#validate()
-	for _ in range(5):
-		main()
+	validate()
+	#for _ in range(500):
+	#	try:
+	#		main()
+	#	except:
+	#		pass
 
